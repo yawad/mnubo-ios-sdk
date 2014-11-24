@@ -157,6 +157,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     NSDictionary *parameters = @{ @"clientid" : _clientId,
                                   @"updateifexists" : updateIfAlreadyExist ? @"1" : @"0"};
 
+    __weak mnubo *weakSelf = self;
     [_httpClient POST:[_baseURL stringByAppendingPathComponent:kMnuboCreateUserPath] headers:headers parameters:parameters data:[user toDictionary] completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
     {
         if(!error)
@@ -165,11 +166,11 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [self refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
+            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
             {
                 if(!error)
                 {
-                    [self createUser:user updateIfAlreadyExist:updateIfAlreadyExist allowRefreshToken:NO completion:completion];
+                    [weakSelf createUser:user updateIfAlreadyExist:updateIfAlreadyExist allowRefreshToken:NO completion:completion];
                 }
                 else
                 {
@@ -201,6 +202,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _writeAccessToken] };
     NSDictionary *parameters = @{ @"clientid" : _clientId };
 
+    __weak mnubo *weakSelf = self;
     [_httpClient PUT:getUsernamePath headers:headers parameters:parameters data:[user toDictionary] completion:^(id data, NSError *error)
     {
         if(!error)
@@ -209,11 +211,11 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [self refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
+            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
             {
                 if(!error)
                 {
-                    [self updateUser:user allowRefreshToken:NO completion:completion];
+                    [weakSelf updateUser:user allowRefreshToken:NO completion:completion];
                 }
                 else
                 {
@@ -239,6 +241,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _readAccessToken] };
     NSDictionary *parameters = @{ @"clientid" : _clientId };
     
+    __weak mnubo *weakSelf = self;
     [_httpClient GET:getUsernamePath headers:headers parameters:parameters completion:^(id data, NSError *error)
      {
          if(!error)
@@ -254,11 +257,11 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
          }
          else if(error.code == 401 && allowRefreshToken)
          {
-             [self refreshTokenOfApplicationType:MnuboApplicationTypeReadOnly completion:^(MBOError *error)
+             [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeReadOnly completion:^(MBOError *error)
               {
                   if(!error)
                   {
-                      [self getUserWithUsername:username allowRefreshToken:NO completion:completion];
+                      [weakSelf getUserWithUsername:username allowRefreshToken:NO completion:completion];
                   }
                   else
                   {
@@ -284,6 +287,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _writeAccessToken] };
     NSDictionary *parameters = @{ @"clientid" : _clientId };
 
+    __weak mnubo *weakSelf = self;
     [_httpClient DELETE:deleteUserPath headers:headers parameters:parameters completion:^(id data, NSError *error)
     {
         if(!error)
@@ -292,11 +296,11 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [self refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
+            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
             {
                 if(!error)
                 {
-                    [self deleteUserWithUsername:username allowRefreshToken:NO completion:completion];
+                    [weakSelf deleteUserWithUsername:username allowRefreshToken:NO completion:completion];
                 }
                 else
                 {
@@ -325,12 +329,13 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _writeAccessToken] };
     NSDictionary *parameters = @{ @"clientid" : _clientId,
                                   @"updateifexists" : updateIfAlreadyExist ? @"1" : @"0"};
-    
+
+    __weak mnubo *weakSelf = self;
     [_httpClient POST:[_baseURL stringByAppendingPathComponent:kMnuboCreateObjectPath] headers:headers parameters:parameters data:[object toDictionary] completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
     {
         if(!error)
         {
-            [self getObjectWithDeviceId:object.deviceId locationHeader:responsesHeaderFields[@"Location"] completion:^(MBOObject *object, MBOError *error)
+            [weakSelf getObjectWithDeviceId:object.deviceId locationHeader:responsesHeaderFields[@"Location"] completion:^(MBOObject *object, MBOError *error)
             {
                 if(error)
                 {
@@ -346,11 +351,11 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [self refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
+            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
             {
                 if(!error)
                 {
-                    [self createObject:object updateIfAlreadyExist:updateIfAlreadyExist allowRefreshToken:NO completion:completion];
+                    [weakSelf createObject:object updateIfAlreadyExist:updateIfAlreadyExist allowRefreshToken:NO completion:completion];
                 }
                 else
                 {
@@ -405,6 +410,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     NSDictionary *parameters = @{ @"clientid" : _clientId,
                                   @"idtype" : byObjectId ? @"objectid" : @"deviceid"};
 
+    __weak mnubo *weakSelf = self;
     [_httpClient PUT:getUsernamePath headers:headers parameters:parameters data:[object toDictionary] completion:^(id data, NSError *error)
     {
         if(!error)
@@ -413,11 +419,11 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [self refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
+            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
             {
                 if(!error)
                 {
-                    [self updateObject:object allowRefreshToken:NO completion:completion];
+                    [weakSelf updateObject:object allowRefreshToken:NO completion:completion];
                 }
                 else
                 {
@@ -463,6 +469,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     NSDictionary *parameters = @{ @"clientid" : _clientId,
                                   @"idtype" : byObjectId ? @"objectid" : @"deviceid"};
 
+    __weak mnubo *weakSelf = self;
     [_httpClient GET:getObjectPath headers:headers parameters:parameters completion:^(id data, NSError *error)
     {
         if(!error)
@@ -478,11 +485,11 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [self refreshTokenOfApplicationType:MnuboApplicationTypeReadOnly completion:^(MBOError *error)
+            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeReadOnly completion:^(MBOError *error)
             {
                 if(!error)
                 {
-                    [self getObjectWithObjectId:objectId orDeviceId:deviceId allowRefreshToken:NO completion:completion];
+                    [weakSelf getObjectWithObjectId:objectId orDeviceId:deviceId allowRefreshToken:NO completion:completion];
                 }
                 else
                 {
@@ -516,6 +523,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     NSDictionary *parameters = @{ @"clientid" : _clientId,
                                   @"idtype" : byObjectId ? @"objectid" : @"deviceid"};
 
+    __weak mnubo *weakSelf = self;
     [_httpClient DELETE:deleteUserPath headers:headers parameters:parameters completion:^(id data, NSError *error)
     {
          if(!error)
@@ -524,11 +532,11 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
          }
          else if(error.code == 401 && allowRefreshToken)
          {
-             [self refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
+             [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
               {
                   if(!error)
                   {
-                      [self deleteObjectWithObjectId:objectId orDeviceId:deviceId allowRefreshToken:NO completion:completion];
+                      [weakSelf deleteObjectWithObjectId:objectId orDeviceId:deviceId allowRefreshToken:NO completion:completion];
                   }
                   else
                   {
@@ -609,7 +617,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
             else
             {
                 MBOError *builtError = nil;
-                if([mnubo isErrorRetryable:error] && !weakSelf.disableSensorDataInternalRetry)
+                if([mnubo isErrorRetryable:error] && !_disableSensorDataInternalRetry)
                 {
                     builtError = [MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeWillBeRetryLaterAutomatically userInfo:nil];
                     [weakSensorDataQueue moveToRetryQueueSensorDataWithIdentifier:queueIdentifiyer];
@@ -646,6 +654,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
                                   @"idtype" : byObjectId ? @"objectid" : @"deviceid",
                                   @"value" : @"last" };
 
+    __weak mnubo *weakSelf = self;
     [_httpClient GET:getSensorPath headers:headers parameters:parameters completion:^(id data, NSError *error)
     {
         if(!error)
@@ -670,11 +679,11 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [self refreshTokenOfApplicationType:MnuboApplicationTypeReadOnly completion:^(MBOError *error)
+            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeReadOnly completion:^(MBOError *error)
              {
                  if(!error)
                  {
-                     [self fetchLastSensorDataObjectId:objectId orDeviceId:deviceId sensorDefinition:sensorDefinition allowRefreshToken:NO completion:completion];
+                     [weakSelf fetchLastSensorDataObjectId:objectId orDeviceId:deviceId sensorDefinition:sensorDefinition allowRefreshToken:NO completion:completion];
                  }
                  else
                  {
@@ -711,6 +720,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
                                   @"startdate" : [MBODateHelper mnuboStringFromDate:startDate],
                                   @"enddate" : [MBODateHelper mnuboStringFromDate:endDate] };
 
+    __weak mnubo *weakSelf = self;
     [_httpClient GET:getSensorPath headers:headers parameters:parameters completion:^(id data, NSError *error)
     {
         if(!error)
@@ -738,11 +748,11 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [self refreshTokenOfApplicationType:MnuboApplicationTypeReadOnly completion:^(MBOError *error)
+            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeReadOnly completion:^(MBOError *error)
             {
                 if(!error)
                 {
-                    [self fetchSensorDatasOfObjectId:objectId orDeviceId:deviceId sensorDefinition:sensorDefinition fromStartDate:startDate toEndDate:endDate allowRefreshToken:NO completion:completion];
+                    [weakSelf fetchSensorDatasOfObjectId:objectId orDeviceId:deviceId sensorDefinition:sensorDefinition fromStartDate:startDate toEndDate:endDate allowRefreshToken:NO completion:completion];
                 }
                 else
                 {
@@ -779,6 +789,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
                                   @"startdate" : [MBODateHelper mnuboStringFromDate:startDate],
                                   @"enddate" : [MBODateHelper mnuboStringFromDate:endDate] };
 
+    __weak mnubo *weakSelf = self;
     [_httpClient GET:getSensorPath headers:headers parameters:parameters completion:^(id data, NSError *error)
     {
         if(!error)
@@ -808,11 +819,11 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [self refreshTokenOfApplicationType:MnuboApplicationTypeReadOnly completion:^(MBOError *error)
+            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeReadOnly completion:^(MBOError *error)
             {
                 if(!error)
                 {
-                    [self fetchSensorDataCountOfObjectId:objectId orDeviceId:deviceId sensorDefinition:sensorDefinition fromStartDate:startDate toEndDate:endDate allowRefreshToken:NO completion:completion];
+                    [weakSelf fetchSensorDataCountOfObjectId:objectId orDeviceId:deviceId sensorDefinition:sensorDefinition fromStartDate:startDate toEndDate:endDate allowRefreshToken:NO completion:completion];
                 }
                 else
                 {

@@ -97,13 +97,13 @@
 
 - (NSString *)stringDataType
 {
-    if (_type == MBODataTypeString)
-    {
-        return @"string";
-    }
-    else if (_type == MBODataTypeFloat)
+    if (_type == MBODataTypeFloat)
     {
         return @"float";
+    }
+    else if (_type == MBODataTypeInteger)
+    {
+        return @"int";
     }
     else if (_type == MBODataTypeDate)
     {
@@ -113,7 +113,10 @@
     {
         return @"uuid";
     }
-    return @"unknown";
+    else
+    {
+        return @"string";
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -122,13 +125,13 @@
 
 - (MBODataType)dataTypeFromString:(NSString *)dataTypeString
 {
-    if([dataTypeString isEqualToString:@"string"])
-    {
-        return MBODataTypeString;
-    }
-    else if([dataTypeString isEqualToString:@"float"])
+    if([dataTypeString isEqualToString:@"float"])
     {
         return  MBODataTypeFloat;
+    }
+    else if([dataTypeString isEqualToString:@"int"])
+    {
+        return  MBODataTypeInteger;
     }
     else if([dataTypeString isEqualToString:@"date"])
     {
@@ -138,7 +141,10 @@
     {
         return  MBODataTypeUUID;
     }
-    return  MBODataTypeUnknown;
+    else
+    {
+        return  MBODataTypeString;
+    }
 }
 
 @end
