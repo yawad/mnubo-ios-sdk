@@ -12,9 +12,9 @@ typedef NS_ENUM(NSInteger, MBODataType)
 {
     MBODataTypeString,
     MBODataTypeFloat,
+    MBODataTypeInteger,
     MBODataTypeDate,
-    MBODataTypeUUID,
-    MBODataTypeUnknown
+    MBODataTypeUUID
 };
 
 @interface MBOValueDefinition : NSObject <NSCopying, NSCoding>

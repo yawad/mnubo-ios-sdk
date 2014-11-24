@@ -103,10 +103,10 @@
         case MBODataTypeUUID:
             return _value;
         case MBODataTypeFloat:
+        case MBODataTypeInteger:
             return [_value stringValue];
         case MBODataTypeDate:
             return [MBODateHelper mnuboStringFromDate:_value];
-        case MBODataTypeUnknown:
             return nil;
     }
 }
@@ -123,11 +123,10 @@
         case MBODataTypeUUID:
             return [value isKindOfClass:[NSString class]];
         case MBODataTypeFloat:
+        case MBODataTypeInteger:
             return [value isKindOfClass:[NSNumber class]];
         case MBODataTypeDate:
             return [value isKindOfClass:[NSDate class]];
-        case MBODataTypeUnknown:
-            return NO;
     };
 }
 
@@ -140,10 +139,10 @@
             return valueString;
         case MBODataTypeFloat:
             return @([valueString doubleValue]);
+        case MBODataTypeInteger:
+            return @([valueString integerValue]);
         case MBODataTypeDate:
             return [MBODateHelper dateFromMnuboString:valueString];
-        default:
-            return nil;
     }
 }
 
