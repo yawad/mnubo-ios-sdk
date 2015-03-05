@@ -13,6 +13,7 @@
 #import "MBOSensorDefinition.h"
 #import "MBOUser.h"
 #import "MBOAttribute.h"
+#import "MBOSample.h"
 
 typedef NS_ENUM(NSUInteger, MBOErrorCode)
 {
@@ -28,12 +29,12 @@ typedef NS_ENUM(NSUInteger, MBOErrorCode)
 @property(nonatomic) NSTimeInterval sensorDataRetryInterval; // Default value: 30 seconds
 @property(nonatomic) BOOL disableSensorDataInternalRetry;
 
-- (instancetype)initWithAccountName:(NSString *)accountName
-                          namespace:(NSString *)namespace
-              readAccessConsumerKey:(NSString *)readAccessConsumerKey
-           readAccessConsumerSecret:(NSString *)readAccessConsumerSecret
-             writeAccessConsumerKey:(NSString *)writeAccessConsumerKey
-          writeAccessConsumerSecret:(NSString *)writeAccessConsumerSecret;
+@property (copy, nonatomic) void (^oauthErrorBlock) (MBOError *error);
+
+
++ (mnubo *)sharedInstanceWithClientId:(NSString *)clientId clientSecret:(NSString *)clientSecret hostname:(NSString *)hostname;
++ (mnubo *)sharedInstance;
+
 
 /// User management
 - (void)createUser:(MBOUser *)user updateIfAlreadyExist:(BOOL)updateIfAlreadyExist completion:(void (^)(MBOError *error))completion;
@@ -44,6 +45,9 @@ typedef NS_ENUM(NSUInteger, MBOErrorCode)
 
 - (void)deleteUserWithUsername:(NSString *)username completion:(void (^)(MBOError *error))completion;
 
+- (void)getObjectsOfUsername:(NSString *)username completion:(void (^) (NSArray *objects, NSError *error))completion;
+
+- (void)changePasswordForUsername:(NSString *)username oldPassword:(NSString *)oldPassword newPassword:(NSString *)newPassword completion:(void (^) (NSError *error))completion;
 
 /// Object management
 - (void)createObject:(MBOObject *)object updateIfAlreadyExist:(BOOL)updateIfAlreadyExist completion:(void (^)(MBOObject *newlyCreatedObject, MBOError *error))completion;
@@ -73,5 +77,17 @@ typedef NS_ENUM(NSUInteger, MBOErrorCode)
 - (void)fetchSensorDataCountOfObjectId:(NSString *)objectId sensorDefinition:(MBOSensorDefinition *)sensorDefinition fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate completion:(void (^)(NSUInteger count, MBOError *error))completion;
 - (void)fetchSensorDataCountOfDeviceId:(NSString *)deviceId sensorDefinition:(MBOSensorDefinition *)sensorDefinition fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate completion:(void (^)(NSUInteger count, MBOError *error))completion;
 
+
+- (void)sendSample:(MBOSample *)sample withObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId completion:(void (^)(MBOError *error))completion;
+/// Tokens
+- (BOOL)isUserConnected;
+
+- (void)logInWithUsername:(NSString *)username password:(NSString *)password completion:(void (^)(MBOError *error))completion oauthErrorCompletion:(void (^) (MBOError *error))oauthErrorCompletion;
+
+- (void)logOut;
+
+- (void)resetPasswordForUsername:(NSString *)username;
+
+- (void)confirmResetPasswordForUsername:(NSString *)username newPassword:(NSString *)newPassword token:(NSString *)token;
 
 @end

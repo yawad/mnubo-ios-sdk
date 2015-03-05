@@ -14,6 +14,7 @@
 NSString const * kMBOUserUserIdKey = @"userId";
 NSString const * kMBOUserUsernameKey = @"username";
 NSString const * kMBOUserPasswordKey = @"password";
+NSString const * kMBOUserConfirmedPasswordKey = @"confirmed_password";
 NSString const * kMBOUserFirstNameKey = @"firstname";
 NSString const * kMBOUserLastNameKey = @"lastname";
 NSString const * kMBOUserRegistrationDateKey = @"registration_date";
@@ -78,6 +79,7 @@ NSString const * kMBOUserAttributesKey = @"attributes";
         _userId = [aDecoder decodeObjectForKey:@"userId"];
         _username = [aDecoder decodeObjectForKey:@"username"];
         _password = [aDecoder decodeObjectForKey:@"password"];
+        _confirmedPassword = [aDecoder decodeObjectForKey:@"confirmedPassword"];
         _firstName = [aDecoder decodeObjectForKey:@"firstName"];
         _lastName = [aDecoder decodeObjectForKey:@"lastName"];
         _registrationDate = [aDecoder decodeObjectForKey:@"registrationDate"];
@@ -92,6 +94,7 @@ NSString const * kMBOUserAttributesKey = @"attributes";
     [encoder encodeObject:_userId forKey:@"userId"];
     [encoder encodeObject:_username forKey:@"username"];
     [encoder encodeObject:_password forKey:@"password"];
+    [encoder encodeObject:_confirmedPassword forKey:@"confirmedPassword"];
     [encoder encodeObject:_firstName forKey:@"firstName"];
     [encoder encodeObject:_lastName forKey:@"lastName"];
     [encoder encodeObject:_registrationDate forKey:@"registrationDate"];
@@ -105,6 +108,7 @@ NSString const * kMBOUserAttributesKey = @"attributes";
     copyUser.userId = _userId;
     copyUser.username = _username;
     copyUser.password = _password;
+    copyUser.confirmedPassword = _confirmedPassword;
     copyUser.firstName = _firstName;
     copyUser.lastName = _lastName;
     copyUser.registrationDate = _registrationDate;
@@ -127,6 +131,7 @@ NSString const * kMBOUserAttributesKey = @"attributes";
     return IsEqualToString(_userId, otherUser.userId) &&
     IsEqualToString(_username, otherUser.username) &&
     IsEqualToString(_password, otherUser.password) &&
+    IsEqualToString(_confirmedPassword, otherUser.confirmedPassword) &&
     IsEqualToString(_firstName, otherUser.firstName) &&
     IsEqualToString(_lastName, otherUser.lastName) &&
     IsEqualToDate(_registrationDate, otherUser.registrationDate) &&
@@ -139,6 +144,7 @@ NSString const * kMBOUserAttributesKey = @"attributes";
     hash += [_userId hash];
     hash += [_username hash];
     hash += [_password hash];
+    hash += [_confirmedPassword hash];
     hash += [_firstName hash];
     hash += [_lastName hash];
     hash += [_registrationDate hash];
@@ -192,6 +198,11 @@ NSString const * kMBOUserAttributesKey = @"attributes";
     {
         [dictionary setObject:_password forKey:kMBOUserPasswordKey];
     }
+    
+    if(_confirmedPassword.length)
+    {
+        [dictionary setObject:_confirmedPassword forKey:kMBOUserConfirmedPasswordKey];
+    }
 
     if(_firstName.length)
     {
@@ -217,8 +228,11 @@ NSString const * kMBOUserAttributesKey = @"attributes";
             [attributeDictionaries addObject:attributeDictionary];
         }
     }];
-    [dictionary setObject:[NSArray arrayWithArray:attributeDictionaries] forKey:@"attributes"];
-
+    if (_innerAttributes.count)
+    {
+        [dictionary setObject:[NSArray arrayWithArray:attributeDictionaries] forKey:@"attributes"];
+    }
+    
     return dictionary;
 }
 

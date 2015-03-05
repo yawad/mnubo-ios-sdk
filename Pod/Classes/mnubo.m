@@ -18,37 +18,44 @@
 #import "MBODateHelper.h"
 #import "MBOSensorDataQueue.h"
 #import "Reachability.h"
+#import "PDKeychainBindings.h"
 
-NSString * const kMnuboReadAccessTokenKey = @"com.mnubo.sdk.read_access_token";
-NSString * const kMnuboWriteAccessTokenKey = @"com.mnubo.sdk.write_access_token";
 
-NSString * const kMnuboRestApiBaseURL = @"api.mnubo.com";
+NSString * const kMnuboClientAccessTokenKey = @"com.mnubo.sdk.client_access_token";
+NSString * const kMnuboClientExpiresInKey = @"com.mnubo.sdk.client_expires_in";
+NSString * const kMnuboClientTokenTimestampKey = @"com.mnubo.sdk.client_token_timestamp";
 
-NSString * const kMnuboGetTokenPath = @"/tokens/1";
+NSString * const kMnuboUserAccessTokenKey = @"com.mnubo.sdk.user_access_token";
+NSString * const kMnuboUserRefreshTokenKey = @"com.mnubo.sdk.user_refresh_token";
+NSString * const kMnuboUserExpiresInKey = @"com.mnubo.sdk.user_expires_in";
+NSString * const kMnuboUserTokenTimestampKey = @"com.mnubo.sdk.user_token_timestamp";
+
+NSString * const kMnuboRestApiBaseURL = @"https://rest.sandbox.mnubo.com:443/api/v3";
+
+/// Tokens
+NSString * const kMnuboGetTokenPath = @"/oauth/token";
+NSString * const kMnuboResetPasswordPath = @"/users/%@/password";
+NSString * const kMnuboConfirmEmailPath= @"/users/%@/confirmation";
 
 /// Users
-NSString * const kMnuboCreateUserPath = @"objwrite/1/users/";
-NSString * const kMnuboUpdateUserPath = @"objwrite/1/users/%@";
-NSString * const kMnuboDeleteUserPath = @"objwrite/1/users/%@";
-NSString * const kMnuboGetUserPath = @"objread/1/users/%@";
+NSString * const kMnuboCreateUserPath = @"/users";
+NSString * const kMnuboUpdateUserPath = @"/users/%@";
+NSString * const kMnuboDeleteUserPath = @"/users/%@";
+NSString * const kMnuboGetUserPath = @"/users/%@";
 
 
 /// Objects
-NSString * const kMnuboCreateObjectPath = @"objwrite/1/objects/";
-NSString * const kMnuboGetObjectPath = @"objread/1/objects/%@";
-NSString * const kMnuboUpdateObjectPath = @"objwrite/1/objects/%@";
-NSString * const kMnuboDeleteObjectPath = @"objwrite/1/objects/%@";
+NSString * const kMnuboCreateObjectPath = @"/objects";
+NSString * const kMnuboGetObjectPath = @"/objects/%@";
+NSString * const kMnuboUpdateObjectPath = @"/objects/%@";
+NSString * const kMnuboDeleteObjectPath = @"/objects/%@";
 
 
 /// Sensor Data
-NSString * const kMnuboPostSensorDataPath = @"objwrite/1/objects/%@/samples";
-NSString * const kMnuboGetSensorDataPath = @"/objread/1/objects/%@/sensors/%@/samples";
+NSString * const kMnuboPostSensorDataPath = @"/objects/%@/samples";
+NSString * const kMnuboPostPublicSensorDataPath = @"/objects/%@/sensors/%@/samples";
+NSString * const kMnuboGetSensorDataPath = @"/objects/%@/sensors/%@/samples";
 
-typedef NS_ENUM(NSUInteger, MnuboApplicationType)
-{
-    MnuboApplicationTypeReadOnly,
-    MnuboApplicationTypeWriteOnly
-};
 
 @interface mnubo()
 {
@@ -59,12 +66,18 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     NSString *_baseURL;
 
     /// Tokens
-    NSString *_readAccessToken;
-    NSString *_writeAccessToken;
+    NSString *_clientAccessToken;
+    NSNumber *_clientExpiresIn;
+    NSDate *_clientTokenTimestamp;
+    
+    NSString *_userAccessToken;
+    NSString *_userRefreshToken;
+    NSNumber *_userExpiresIn;
+    NSDate *_userTokenTimestamp;
 
     /// Authentication
-    NSString *_readTokenBasicAuthentication;
-    NSString *_writeTokenBasicAuthentication;
+    NSString *_clientCredentialsTokenBasicAuthentication;
+
 
     NSString *_accountName;
 }
@@ -73,12 +86,31 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
 
 @implementation mnubo
 
+static mnubo *_sharedInstance = nil;
+
++ (mnubo *)sharedInstanceWithClientId:(NSString *)clientId clientSecret:(NSString *)clientSecret hostname:(NSString *)hostname
+{
+    
+    static dispatch_once_t unique = 0;
+    
+    dispatch_once(&unique, ^{
+        _sharedInstance = [[self alloc] initWithAccountName:@"" namespace:@"" clientId:clientId clientSecret:clientSecret hostname:hostname];
+    });
+    
+    return _sharedInstance;
+}
+
++ (mnubo *)sharedInstance
+{
+    return _sharedInstance;
+}
+
 - (instancetype)initWithAccountName:(NSString *)accountName
                           namespace:(NSString *)namespace
-              readAccessConsumerKey:(NSString *)readAccessConsumerKey
-           readAccessConsumerSecret:(NSString *)readAccessConsumerSecret
-             writeAccessConsumerKey:(NSString *)writeAccessConsumerKey
-          writeAccessConsumerSecret:(NSString *)writeAccessConsumerSecret
+                           clientId:(NSString *)clientId
+                       clientSecret:(NSString *)clientSecret
+                           hostname:(NSString *)hostname
+
 {
     self = [super init];
     if(self)
@@ -91,14 +123,29 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         _httpClient = [[MBOBasicHttpClient alloc] init];
 
         _accountName = accountName;
-        _clientId = [[NSString stringWithFormat:@"%@:%@", _accountName, namespace] base64Encode];
+        _clientId = clientId;
 
-        _readTokenBasicAuthentication = [[NSString stringWithFormat:@"%@:%@", readAccessConsumerKey, readAccessConsumerSecret] base64Encode];
-        _writeTokenBasicAuthentication = [[NSString stringWithFormat:@"%@:%@", writeAccessConsumerKey, writeAccessConsumerSecret] base64Encode];
+        _clientCredentialsTokenBasicAuthentication = [[NSString stringWithFormat:@"%@:%@", clientId, clientSecret] base64Encode];
 
-        _baseURL = [NSString stringWithFormat:@"https://%@.%@", _accountName, kMnuboRestApiBaseURL];
+
+        _baseURL = hostname;
 
         [self loadTokens];
+        
+        if (!_clientAccessToken || !_clientExpiresIn)
+        {
+            [self getClientAccessTokenCompletion:^(MBOError *error) {
+                if (!error)
+                    NSLog(@"Client access token successfully fetched during SDK initialization");
+                else
+                    NSLog(@"ERROR while fetching the client access token during SDK initialization");
+            }];
+        }
+        else
+        {
+            NSLog(@"Client access token found in the user defaults : %@", [_clientAccessToken substringToIndex:10]);
+            NSLog(@"It expires in %@ seconds from its generation", _clientExpiresIn);
+        }
     }
 
     return self;
@@ -115,14 +162,29 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
 
 - (void)loadTokens
 {
-    _readAccessToken = [[NSUserDefaults standardUserDefaults] objectForKey:[NSString stringWithFormat:@"%@_%@", kMnuboReadAccessTokenKey, _clientId]];
-    _writeAccessToken = [[NSUserDefaults standardUserDefaults] objectForKey:[NSString stringWithFormat:@"%@_%@", kMnuboWriteAccessTokenKey, _clientId]];
+    
+    _clientAccessToken = [[PDKeychainBindings sharedKeychainBindings] stringForKey:kMnuboClientAccessTokenKey];
+    _clientExpiresIn = [[NSUserDefaults standardUserDefaults] objectForKey:kMnuboClientExpiresInKey];
+    _clientTokenTimestamp = [[NSUserDefaults standardUserDefaults] objectForKey:kMnuboClientTokenTimestampKey];
+    
+    
+    _userAccessToken = [[PDKeychainBindings sharedKeychainBindings] stringForKey:kMnuboUserAccessTokenKey];
+    _userRefreshToken = [[PDKeychainBindings sharedKeychainBindings] stringForKey:kMnuboUserRefreshTokenKey];
+    _userExpiresIn = [[NSUserDefaults standardUserDefaults] objectForKey:kMnuboUserExpiresInKey];
+    _userTokenTimestamp = [[NSUserDefaults standardUserDefaults] objectForKey:kMnuboUserTokenTimestampKey];
 }
 
 - (void)saveTokens
 {
-    [[NSUserDefaults standardUserDefaults] setObject:_readAccessToken forKey:[NSString stringWithFormat:@"%@_%@", kMnuboReadAccessTokenKey, _clientId]];
-    [[NSUserDefaults standardUserDefaults] setObject:_writeAccessToken forKey:[NSString stringWithFormat:@"%@_%@", kMnuboWriteAccessTokenKey, _clientId]];
+    [[PDKeychainBindings sharedKeychainBindings] setString:_clientAccessToken forKey:kMnuboClientAccessTokenKey];
+    [[NSUserDefaults standardUserDefaults] setObject:_clientExpiresIn forKey:kMnuboClientExpiresInKey];
+    [[NSUserDefaults standardUserDefaults] setObject:_clientTokenTimestamp forKey:kMnuboClientTokenTimestampKey];
+    
+    [[PDKeychainBindings sharedKeychainBindings] setString:_userAccessToken forKey:kMnuboUserAccessTokenKey];
+    [[PDKeychainBindings sharedKeychainBindings] setString:_userRefreshToken forKey:kMnuboUserRefreshTokenKey];
+    [[NSUserDefaults standardUserDefaults] setObject:_userExpiresIn forKey:kMnuboUserExpiresInKey];
+    [[NSUserDefaults standardUserDefaults] setObject:_userTokenTimestamp forKey:kMnuboUserTokenTimestampKey];
+    
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
@@ -153,9 +215,8 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
 
 - (void)createUser:(MBOUser *)user updateIfAlreadyExist:(BOOL)updateIfAlreadyExist allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOError *error))completion
 {
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _writeAccessToken] };
-    NSDictionary *parameters = @{ @"clientid" : _clientId,
-                                  @"updateifexists" : updateIfAlreadyExist ? @"1" : @"0"};
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _clientAccessToken] };
+    NSDictionary *parameters = @{@"updateifexists" : updateIfAlreadyExist ? @"1" : @"0"};
 
     __weak mnubo *weakSelf = self;
     [_httpClient POST:[_baseURL stringByAppendingPathComponent:kMnuboCreateUserPath] headers:headers parameters:parameters data:[user toDictionary] completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
@@ -166,7 +227,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
+            [weakSelf getClientAccessTokenCompletion:^(MBOError *error)
             {
                 if(!error)
                 {
@@ -199,8 +260,8 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     }
 
     NSString *getUsernamePath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboUpdateUserPath, [user.username urlEncode]]];
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _writeAccessToken] };
-    NSDictionary *parameters = @{ @"clientid" : _clientId };
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
+    NSDictionary *parameters = @{};
 
     __weak mnubo *weakSelf = self;
     [_httpClient PUT:getUsernamePath headers:headers parameters:parameters data:[user toDictionary] completion:^(id data, NSError *error)
@@ -211,7 +272,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
+            [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
             {
                 if(!error)
                 {
@@ -238,8 +299,8 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
 - (void)getUserWithUsername:(NSString *)username allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOUser *user, MBOError *error))completion
 {
     NSString *getUsernamePath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboGetUserPath, [username urlEncode]]];
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _readAccessToken] };
-    NSDictionary *parameters = @{ @"clientid" : _clientId };
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _clientAccessToken] };
+    NSDictionary *parameters = @{};
     
     __weak mnubo *weakSelf = self;
     [_httpClient GET:getUsernamePath headers:headers parameters:parameters completion:^(id data, NSError *error)
@@ -257,7 +318,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
          }
          else if(error.code == 401 && allowRefreshToken)
          {
-             [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeReadOnly completion:^(MBOError *error)
+             [weakSelf getClientAccessTokenCompletion:^(MBOError *error)
               {
                   if(!error)
                   {
@@ -284,8 +345,8 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
 - (void)deleteUserWithUsername:(NSString *)username allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOError *error))completion
 {
     NSString *deleteUserPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboDeleteUserPath, [username urlEncode]]];
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _writeAccessToken] };
-    NSDictionary *parameters = @{ @"clientid" : _clientId };
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _clientAccessToken] };
+    NSDictionary *parameters = @{};
 
     __weak mnubo *weakSelf = self;
     [_httpClient DELETE:deleteUserPath headers:headers parameters:parameters completion:^(id data, NSError *error)
@@ -296,7 +357,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
+            [weakSelf getClientAccessTokenCompletion:^(MBOError *error)
             {
                 if(!error)
                 {
@@ -315,6 +376,58 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     }];
 }
 
+
+- (void)getObjectsOfUsername:(NSString *)username completion:(void (^) (NSArray *objects, NSError *error))completion {
+    NSString *path = [NSString stringWithFormat:@"%@/users/%@/objects", _baseURL, username];
+    
+    NSLog(@"Get user's objects with path : %@", path);
+    
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
+    
+    [_httpClient GET:path headers:headers parameters:nil completion:^(id data, NSError *error) {
+        if (!error)
+        {
+            if ([data isKindOfClass:[NSDictionary class]])
+            {
+                NSArray *objectData = [data objectForKey:@"objects"];
+                NSMutableArray *objects = [[NSMutableArray alloc] init];
+                for (int i=0; i<objectData.count; i++) {
+                    MBOObject *newObject = [[MBOObject alloc] initWithDictionary:[objectData objectAtIndex:i]];
+                    newObject.ownerUsername = username;
+                    [objects addObject:newObject];
+                }
+                if (completion) completion(objects, nil);
+                
+            }
+        }
+        else
+        {
+            if (completion) completion(nil, error);
+        }
+    }];
+}
+
+- (void)changePasswordForUsername:(NSString *)username oldPassword:(NSString *)oldPassword newPassword:(NSString *)newPassword completion:(void (^) (NSError *error))completion
+{
+    NSString *path = [NSString stringWithFormat:@"%@/users/%@/password", _baseURL, username];
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _clientAccessToken] };
+    
+    NSDictionary *bodyData = @{@"password": newPassword, @"confirmed_password": newPassword, @"previous_password": oldPassword};
+    
+    
+    [_httpClient PUT:path headers:headers parameters:nil data:bodyData completion:^(id data, NSError *error)
+     {
+         if(!error)
+         {
+             if(completion) completion(nil);
+         }
+         else
+         {
+             if(completion) completion(error);
+         }
+     }];
+}
+
 //------------------------------------------------------------------------------
 #pragma mark Object management
 //------------------------------------------------------------------------------
@@ -326,15 +439,22 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
 
 - (void)createObject:(MBOObject *)object updateIfAlreadyExist:(BOOL)updateIfAlreadyExist allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOObject *newlyCreatedObject, MBOError *error))completion
 {
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _writeAccessToken] };
-    NSDictionary *parameters = @{ @"clientid" : _clientId,
-                                  @"updateifexists" : updateIfAlreadyExist ? @"1" : @"0"};
+    
+    NSString *createObjectPath = [NSString stringWithFormat:@"%@%@", _baseURL, kMnuboCreateObjectPath];
+    
+    NSLog(@"Create object with path : %@", createObjectPath);
+    
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
+    
+    NSDictionary *parameters = @{};
+    //NSDictionary *parameters = @{ @"clientid" : _clientId, @"updateifexists" : updateIfAlreadyExist ? @"1" : @"0"};
 
     __weak mnubo *weakSelf = self;
-    [_httpClient POST:[_baseURL stringByAppendingPathComponent:kMnuboCreateObjectPath] headers:headers parameters:parameters data:[object toDictionary] completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
+    [_httpClient POST:createObjectPath headers:headers parameters:parameters data:[object toDictionary] completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
     {
         if(!error)
         {
+            
             [weakSelf getObjectWithDeviceId:object.deviceId locationHeader:responsesHeaderFields[@"Location"] completion:^(MBOObject *object, MBOError *error)
             {
                 if(error)
@@ -351,7 +471,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
+            [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
             {
                 if(!error)
                 {
@@ -405,13 +525,12 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     }
 
     BOOL byObjectId = object.objectId.length > 0;
-    NSString *getUsernamePath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboUpdateObjectPath, byObjectId ? [object.objectId urlEncode] : [object.deviceId urlEncode]]];
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _writeAccessToken] };
-    NSDictionary *parameters = @{ @"clientid" : _clientId,
-                                  @"idtype" : byObjectId ? @"objectid" : @"deviceid"};
+
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
+    NSDictionary *parameters = @{@"id_type" : byObjectId ? @"objectid" : @"deviceid"};
 
     __weak mnubo *weakSelf = self;
-    [_httpClient PUT:getUsernamePath headers:headers parameters:parameters data:[object toDictionary] completion:^(id data, NSError *error)
+    [_httpClient PUT:[NSString stringWithFormat:@"%@%@", _baseURL, [NSString stringWithFormat:kMnuboUpdateObjectPath, byObjectId ? [object.objectId urlEncode] : [object.deviceId urlEncode]]] headers:headers parameters:parameters data:[object toDictionary] completion:^(id data, NSError *error)
     {
         if(!error)
         {
@@ -419,7 +538,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
+            [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
             {
                 if(!error)
                 {
@@ -465,9 +584,8 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     BOOL byObjectId = objectId.length > 0;
 
     NSString *getObjectPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboGetObjectPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode]]];
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _readAccessToken] };
-    NSDictionary *parameters = @{ @"clientid" : _clientId,
-                                  @"idtype" : byObjectId ? @"objectid" : @"deviceid"};
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
+    NSDictionary *parameters = @{@"id_type" : byObjectId ? @"objectid" : @"deviceid"};
 
     __weak mnubo *weakSelf = self;
     [_httpClient GET:getObjectPath headers:headers parameters:parameters completion:^(id data, NSError *error)
@@ -485,7 +603,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeReadOnly completion:^(MBOError *error)
+            [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
             {
                 if(!error)
                 {
@@ -518,13 +636,11 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
 {
     BOOL byObjectId = objectId.length > 0;
 
-    NSString *deleteUserPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboDeleteObjectPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode]]];
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _writeAccessToken] };
-    NSDictionary *parameters = @{ @"clientid" : _clientId,
-                                  @"idtype" : byObjectId ? @"objectid" : @"deviceid"};
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
+    NSDictionary *parameters = @{@"id_type" : byObjectId ? @"objectid" : @"deviceid"};
 
     __weak mnubo *weakSelf = self;
-    [_httpClient DELETE:deleteUserPath headers:headers parameters:parameters completion:^(id data, NSError *error)
+    [_httpClient DELETE:[NSString stringWithFormat:@"%@%@", _baseURL, [NSString stringWithFormat:kMnuboDeleteObjectPath, byObjectId ? [objectId urlEncode] : [deviceId urlEncode]]] headers:headers parameters:parameters completion:^(id data, NSError *error)
     {
          if(!error)
          {
@@ -532,7 +648,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
          }
          else if(error.code == 401 && allowRefreshToken)
          {
-             [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
+             [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
               {
                   if(!error)
                   {
@@ -583,9 +699,11 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     BOOL byObjectId = objectId.length > 0;
 
     NSString *postSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboPostSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode]]];
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _writeAccessToken] };
-    NSDictionary *parameters = @{ @"clientid" : _clientId,
-                                  @"idtype" : byObjectId ? @"objectid" : @"deviceid"};
+    
+    NSLog(@"Sample sent with path : %@", postSensorPath);
+    
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
+    NSDictionary *parameters = @{ @"id_type" : byObjectId ? @"objectid" : @"deviceid"};
 
     __weak mnubo *weakSelf = self;
     __weak id<MBOHttpClient> weakHttpClient = _httpClient;
@@ -601,7 +719,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
             }
             else if(error.code == 401 && allowRefreshToken)
             {
-                [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeWriteOnly completion:^(MBOError *error)
+                [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
                 {
                     [weakSensorDataQueue removeSensorDataWithIdentifier:queueIdentifiyer];
                     if(!error)
@@ -617,7 +735,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
             else
             {
                 MBOError *builtError = nil;
-                if([mnubo isErrorRetryable:error] && !_disableSensorDataInternalRetry)
+                if([mnubo isErrorRetryable:error] && !weakSelf.disableSensorDataInternalRetry)
                 {
                     builtError = [MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeWillBeRetryLaterAutomatically userInfo:nil];
                     [weakSensorDataQueue moveToRetryQueueSensorDataWithIdentifier:queueIdentifiyer];
@@ -649,9 +767,11 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     BOOL byObjectId = objectId.length > 0;
     
     NSString *getSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboGetSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode], [sensorDefinition.name urlEncode]]];
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _readAccessToken] };
-    NSDictionary *parameters = @{ @"clientid" : _clientId,
-                                  @"idtype" : byObjectId ? @"objectid" : @"deviceid",
+    
+    NSLog(@"Sample fetched with path : %@", getSensorPath);
+    
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
+    NSDictionary *parameters = @{@"id_type" : byObjectId ? @"objectid" : @"deviceid",
                                   @"value" : @"last" };
 
     __weak mnubo *weakSelf = self;
@@ -679,7 +799,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeReadOnly completion:^(MBOError *error)
+            [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
              {
                  if(!error)
                  {
@@ -713,9 +833,12 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     BOOL byObjectId = objectId.length > 0;
     
     NSString *getSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboGetSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode], [sensorDefinition.name urlEncode]]];
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _readAccessToken] };
+    
+    NSLog(@"Sample fetched with path : %@", getSensorPath);
+    
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
     NSDictionary *parameters = @{ @"clientid" : _clientId,
-                                  @"idtype" : byObjectId ? @"objectid" : @"deviceid",
+                                  @"id_type" : byObjectId ? @"objectid" : @"deviceid",
                                   @"value" : @"samples",
                                   @"startdate" : [MBODateHelper mnuboStringFromDate:startDate],
                                   @"enddate" : [MBODateHelper mnuboStringFromDate:endDate] };
@@ -748,7 +871,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeReadOnly completion:^(MBOError *error)
+            [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
             {
                 if(!error)
                 {
@@ -782,9 +905,12 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     BOOL byObjectId = objectId.length > 0;
 
     NSString *getSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboGetSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode], [sensorDefinition.name urlEncode]]];
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _readAccessToken] };
+    
+    NSLog(@"Sample fetched with path : %@", getSensorPath);
+    
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
     NSDictionary *parameters = @{ @"clientid" : _clientId,
-                                  @"idtype" : byObjectId ? @"objectid" : @"deviceid",
+                                  @"id_type" : byObjectId ? @"objectid" : @"deviceid",
                                   @"value" : @"count",
                                   @"startdate" : [MBODateHelper mnuboStringFromDate:startDate],
                                   @"enddate" : [MBODateHelper mnuboStringFromDate:endDate] };
@@ -819,7 +945,7 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [weakSelf refreshTokenOfApplicationType:MnuboApplicationTypeReadOnly completion:^(MBOError *error)
+            [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
             {
                 if(!error)
                 {
@@ -838,49 +964,340 @@ typedef NS_ENUM(NSUInteger, MnuboApplicationType)
     }];
 }
 
+
+#pragma mark Sensor Sample 2.0
+
+
+- (void)sendSample:(MBOSample *)sample withObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId completion:(void (^)(MBOError *error))completion
+{
+    BOOL byObjectId = objectId.length > 0;
+    
+    NSString *postSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboPostSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode]]];
+    
+    NSLog(@"Sample sent with path : %@", postSensorPath);
+    
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
+    NSDictionary *parameters = @{ @"id_type" : byObjectId ? @"objectid" : @"deviceid"};
+    
+    NSDictionary *data = @{@"samples": @[[sample toDictionary]]};
+    
+    __weak mnubo *weakSelf = self;
+
+     [_httpClient POST:postSensorPath headers:headers parameters:parameters data:data completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
+      {
+          if(!error)
+          {
+              if(completion) completion(nil);
+          }
+          else if(error.code == 401)
+          {
+              [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
+               {
+                   if(!error)
+                   {
+                       [weakSelf sendSample:sample withObjectId:objectId orDeviceId:deviceId completion:completion];
+                   }
+                   else
+                   {
+                       if(completion) completion(error);
+                   }
+               }];
+          }
+          else
+          {
+              MBOError *builtError = nil;
+              if([mnubo isErrorRetryable:error] && !weakSelf.disableSensorDataInternalRetry)
+              {
+                  builtError = [MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeWillBeRetryLaterAutomatically userInfo:nil];
+              }
+              else
+              {
+                  builtError = [MBOError errorWithError:error extraInfo:data];
+              }
+              
+              if(completion) completion(builtError);
+          }
+      }];
+}
+
+- (void)sendToPublicSensorASample:(MBOSample *)sample withName:(NSString *)sensorName withObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId completion:(void (^)(MBOError *error))completion
+{
+    BOOL byObjectId = objectId.length > 0;
+    
+    NSString *postSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboPostPublicSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode], sensorName]];
+    
+    NSLog(@"Sample sent with path : %@", postSensorPath);
+    
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
+    NSDictionary *parameters = @{ @"id_type" : byObjectId ? @"objectid" : @"deviceid"};
+    
+    NSDictionary *data = @{@"samples": @[[sample toDictionary]]};
+    
+    __weak mnubo *weakSelf = self;
+    
+    [_httpClient POST:postSensorPath headers:headers parameters:parameters data:data completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
+     {
+         if(!error)
+         {
+             if(completion) completion(nil);
+         }
+         else if(error.code == 401)
+         {
+             [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
+              {
+                  if(!error)
+                  {
+                      [weakSelf sendSample:sample withObjectId:objectId orDeviceId:deviceId completion:completion];
+                  }
+                  else
+                  {
+                      if(completion) completion(error);
+                  }
+              }];
+         }
+         else
+         {
+             MBOError *builtError = nil;
+             if([mnubo isErrorRetryable:error] && !weakSelf.disableSensorDataInternalRetry)
+             {
+                 builtError = [MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeWillBeRetryLaterAutomatically userInfo:nil];
+             }
+             else
+             {
+                 builtError = [MBOError errorWithError:error extraInfo:data];
+             }
+             
+             if(completion) completion(builtError);
+         }
+     }];
+}
+
 //------------------------------------------------------------------------------
 #pragma mark Tokens
 //------------------------------------------------------------------------------
-- (void)refreshTokenOfApplicationType:(MnuboApplicationType)applicationType completion:(void (^)(MBOError *error))completion
+- (void)getClientAccessTokenCompletion:(void (^)(MBOError *error))completion
 {
-    NSString *getTokenPath = [_baseURL stringByAppendingPathComponent:kMnuboGetTokenPath];
-
-    NSString *getTokenBasicAuth;
-    switch (applicationType)
+    NSString *getTokenPath = [NSString stringWithFormat:@"%@%@", _baseURL, kMnuboGetTokenPath];
+    
+    NSDictionary *headers = @{ @"Content-Type": @"application/json", @"Authorization" : [NSString stringWithFormat:@"Basic %@", _clientCredentialsTokenBasicAuthentication] };
+    NSDictionary *parameters = @{ @"grant_type" : @"client_credentials"};
+    
+    [_httpClient POST:getTokenPath headers:headers parameters:parameters data:@{} completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
     {
-        case MnuboApplicationTypeReadOnly:
-            getTokenBasicAuth = _readTokenBasicAuthentication;
-            break;
-        case MnuboApplicationTypeWriteOnly:
-            getTokenBasicAuth = _writeTokenBasicAuthentication;
-            break;
-    }
+         if(!error && [data isKindOfClass:[NSDictionary class]])
+         {
+             NSDictionary *jsonData = data;
+             _clientAccessToken = [jsonData objectForKey:@"access_token"];
+             _clientExpiresIn = [jsonData objectForKey:@"expires_in"];
+             _clientTokenTimestamp = [NSDate date];
+             
+             [self saveTokens];
+             if(completion) completion(nil);
+         }
+         else
+         {
+             if(completion) completion([MBOError errorWithError:error extraInfo:data]);
+         }
+     }];
+}
 
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Basic %@", getTokenBasicAuth] };
-
-    [_httpClient GET:getTokenPath headers:headers parameters:@{ @"clientid" : _clientId } completion:^(id data, NSError *error)
+- (void)getUserAccessTokenWithUsername:(NSString *)username password:(NSString *)password completion:(void (^)(MBOError *error))completion
+{
+    NSString *getTokenPath = [NSString stringWithFormat:@"%@%@", _baseURL, kMnuboGetTokenPath];
+    
+    NSLog(@"Get user access token with path : %@", getTokenPath);
+    
+    NSDictionary *headers = @{ @"Content-Type": @"application/x-www-form-urlencoded"};
+    NSDictionary *parameters = @{ @"grant_type": @"password", @"client_id": _clientId, @"username": username, @"password": password};
+    
+    [_httpClient POST:getTokenPath headers:headers parameters:parameters data:@{} completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
     {
-        if(!error && [data isKindOfClass:[NSDictionary class]])
+         if(!error && [data isKindOfClass:[NSDictionary class]])
+         {
+             NSDictionary *jsonData = data;
+             _userAccessToken = [jsonData objectForKey:@"access_token"];
+             _userRefreshToken = [jsonData objectForKey:@"refresh_token"];
+             _userExpiresIn = [jsonData objectForKey:@"expires_in"];
+             _userTokenTimestamp = [NSDate date];
+             
+             
+             [self saveTokens];
+             if(completion) completion(nil);
+         }
+         else
+         {
+             if(completion) completion([MBOError errorWithError:error extraInfo:data]);
+         }
+     }];
+}
+
+
+- (void)getUserAccessTokenWithRefreshTokenCompletion:(void (^)(MBOError *error))completion
+{
+    NSString *getTokenPath = [NSString stringWithFormat:@"%@%@", _baseURL, kMnuboGetTokenPath];
+    
+    NSLog(@"Get user access token with refresh token and path : %@", getTokenPath);
+    
+    NSDictionary *headers = @{ @"Content-Type": @"application/x-www-form-urlencoded"};
+    NSDictionary *parameters = @{ @"grant_type": @"refresh_token", @"client_id": _clientId, @"refresh_token": _userRefreshToken};
+    
+    [_httpClient POST:getTokenPath headers:headers parameters:parameters data:@{} completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
+     {
+         if(!error && [data isKindOfClass:[NSDictionary class]])
+         {
+             NSDictionary *jsonData = data;
+             _userAccessToken = [jsonData objectForKey:@"access_token"];
+             _userRefreshToken = [jsonData objectForKey:@"refresh_token"];
+             _userExpiresIn = [jsonData objectForKey:@"expires_in"];
+             _userTokenTimestamp = [NSDate date];
+             
+             
+             [self saveTokens];
+             if(completion) completion(nil);
+         }
+         else
+         {
+             //Refresh Token expired
+             
+             if ([self isUserConnected])
+             {
+                 [self logOut];
+                 self.oauthErrorBlock(nil);
+                 
+             }
+             
+             if(completion) completion([MBOError errorWithError:error extraInfo:data]);
+         }
+     }];
+}
+
+- (BOOL)isTokenValid
+{
+    if (_userRefreshToken)
+    {
+        NSTimeInterval interval = [_userTokenTimestamp timeIntervalSinceNow];
+        double remainingValidity = interval + [_userExpiresIn doubleValue];
+        
+        NSLog(@"Validity : %f", remainingValidity);
+        
+        if (remainingValidity <= 0)
         {
-            NSDictionary *jsonData = data;
-            switch (applicationType)
-            {
-                case MnuboApplicationTypeReadOnly:
-                    _readAccessToken = [jsonData objectForKey:@"access_token"];
-                    break;
-                case MnuboApplicationTypeWriteOnly:
-                    _writeAccessToken = [jsonData objectForKey:@"access_token"];
-                    break;
-            }
-
-            [self saveTokens];
-            if(completion) completion(nil);
+            [self getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error) {
+                if (!error)
+                    NSLog(@"Refresh Token used.");
+                else
+                    NSLog(@"ERROR while refreshing the token.");
+            }];
+            return NO;
         }
         else
         {
-            if(completion) completion([MBOError errorWithError:error extraInfo:data]);
+            return YES;
+        }
+    }
+    else
+    {
+        return NO;
+    }
+}
+
+- (BOOL)isUserConnected
+{
+    if (_userAccessToken)
+        return YES;
+    else
+        return NO;
+}
+
+- (void)logInWithUsername:(NSString *)username password:(NSString *)password completion:(void (^)(MBOError *error))completion oauthErrorCompletion:(void (^) (MBOError *error))oauthErrorCompletion
+{
+    NSLog(@"Login called with username : %@", username);
+    
+    self.oauthErrorBlock = oauthErrorCompletion;
+    
+    [self getUserAccessTokenWithUsername:username password:password completion:^(MBOError *error) {
+       if(completion) completion(error);
+    }];
+}
+
+- (void)logOut
+{
+    NSLog(@"User logged out");
+    
+    _userAccessToken = nil;
+    _userExpiresIn = nil;
+    _userTokenTimestamp = nil;
+    _userRefreshToken = nil;
+    [self saveTokens];
+}
+
+- (void)resetPasswordForUsername:(NSString *)username
+{
+    NSString *resetPasswordPath = [NSString stringWithFormat:@"%@%@", _baseURL, [NSString stringWithFormat:kMnuboResetPasswordPath, username]];
+    
+    NSLog(@"Reset password with path : %@", resetPasswordPath);
+    
+    NSDictionary *headers = @{ @"Authorization": [NSString stringWithFormat:@"Bearer %@", _clientAccessToken]};
+    
+    [_httpClient DELETE:resetPasswordPath headers:headers parameters:nil completion:^(id data, NSError *error)
+    {
+        if (!error)
+        {
+            NSLog(@"Password has been reset successfully");
+        }
+        else
+        {
+            NSLog(@"Error while reseting the password");
         }
     }];
+    
+}
+
+- (void)confirmResetPasswordForUsername:(NSString *)username newPassword:(NSString *)newPassword token:(NSString *)token
+{
+    NSString *resetPasswordPath = [NSString stringWithFormat:@"%@%@", _baseURL, [NSString stringWithFormat:kMnuboResetPasswordPath, username]];
+    
+    NSLog(@"Confirm reset password with path : %@", resetPasswordPath);
+    
+    NSDictionary *headers = @{ @"Authorization": [NSString stringWithFormat:@"Bearer %@", _clientAccessToken]};
+    NSDictionary *data = @{ @"token": token, @"password": newPassword, @"confirmed_password": newPassword };
+    
+    [_httpClient POST:resetPasswordPath headers:headers parameters:nil data:data completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
+     {
+         if (!error)
+         {
+             NSLog(@"Password reset has been confirmed successfully");
+         }
+         else
+         {
+             NSLog(@"Error while confirming the reset password");
+         }
+     }];
+    
+}
+
+
+- (void)confirmEmailForUsername:(NSString *)username password:(NSString *)password token:(NSString *)token
+{
+    NSString *confirmEmailPath = [NSString stringWithFormat:@"%@%@", _baseURL, [NSString stringWithFormat:kMnuboConfirmEmailPath, username]];
+    
+    NSLog(@"Confirm email with path : %@", confirmEmailPath);
+    
+    NSDictionary *headers = @{ @"Authorization": [NSString stringWithFormat:@"Bearer %@", _userAccessToken]};
+    NSDictionary *data = @{ @"token": token, @"password": password};
+    
+    [_httpClient POST:confirmEmailPath headers:headers parameters:nil data:data completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
+     {
+         if (!error)
+         {
+             NSLog(@"Email has been confirmed successfully");
+         }
+         else
+         {
+             NSLog(@"Error while confirming the email");
+         }
+     }];
+    
 }
 
 

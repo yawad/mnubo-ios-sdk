@@ -96,12 +96,12 @@ typedef void (^MBOBasicClientCompletionBlock)(id data, NSDictionary *responseHea
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[NSURL URLWithString:[MBOBasicHttpClient addParameters:parameters toPath:path]]];
     [request setHTTPMethod:method];
 
+    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    
     [headers enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *value, BOOL *stop)
     {
          [request setValue:value forHTTPHeaderField:key];
     }];
-
-    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
 
     return request;
 }

@@ -91,7 +91,7 @@
         _location = [[MBOLocation alloc] initWithDictionary:dictionary];
 
         _sensorValues = [NSMutableArray array];
-        NSDictionary *values = [dictionary dictionaryForKey:@"values"];
+        NSDictionary *values = [dictionary dictionaryForKey:@"value"];
         [values enumerateKeysAndObjectsUsingBlock:^(NSString *valueName, id value, BOOL *stop)
         {
             MBOValueContainer *valueContainer = [[MBOValueContainer alloc] initWithValueDefinition:

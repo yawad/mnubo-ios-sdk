@@ -15,9 +15,9 @@
 #import "MBOLocation+Private.h"
 #import "MBODateHelper.h"
 
-NSString const * kMBOObjectObjectIdKey = @"objectid";
-NSString const * kMBOObjectDeviceIdKey = @"deviceid";
-NSString const * kMBOObjectModelNameKey = @"model_name";
+NSString const * kMBOObjectObjectIdKey = @"object_id";
+NSString const * kMBOObjectDeviceIdKey = @"device_id";
+NSString const * kMBOObjectModelNameKey = @"object_model";
 NSString const * kMBOObjectActivateKey = @"activate";
 NSString const * kMBOObjectOwnerKey = @"owner";
 NSString const * kMBOObjectCollectionIdKey = @"collection";
@@ -188,9 +188,13 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
 {
     NSMutableDictionary *_dictionary = [[NSMutableDictionary alloc] init];
     
-    [_dictionary setObject:_activate ? @"yes" : @"no" forKey:kMBOObjectActivateKey];
+#warning Update Data Structure
+    //[_dictionary setObject:_activate ? @"yes" : @"no" forKey:kMBOObjectActivateKey];
     
-    _dictionary[@"registration_location"] = [_location toDictionary];
+    if (_location)
+    {
+        _dictionary[@"registration_location"] = [_location toDictionary];
+    }
     
     if(_deviceId.length)
     {
@@ -207,13 +211,17 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
         [_dictionary setObject:_ownerUsername forKey:kMBOObjectOwnerKey];
     }
     
-    NSMutableArray *attributeDictionaries = [NSMutableArray array];
-    [_innerAttributes enumerateObjectsUsingBlock:^(MBOAttribute *attribute, NSUInteger idx, BOOL *stop)
-    {
-        [attributeDictionaries addObject:[attribute toDictionary]];
-    }];
-    [_dictionary setObject:attributeDictionaries forKey:@"attributes"];
+//    NSMutableArray *attributeDictionaries = [NSMutableArray array];
+//    [_innerAttributes enumerateObjectsUsingBlock:^(MBOAttribute *attribute, NSUInteger idx, BOOL *stop)
+//    {
+//        [attributeDictionaries addObject:[attribute toDictionary]];
+//    }];
     
+    #warning Update Data Structure
+    //[_dictionary setObject:_innerAttributes forKey:@"attributes"];
+    
+    SafeSetValueForKey(_dictionary, @"attributes", _innerAttributes)
+
     SafeSetValueForKey(_dictionary, @"registration_date", [MBODateHelper mnuboStringFromDate:_registrationDate]);
 
     if (_collectionId.length)
@@ -222,6 +230,10 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
     }
 
     return _dictionary;
+}
+
+- (void)setAttributes:(NSArray *)attributes {
+    _innerAttributes = [[NSMutableArray alloc] initWithArray:attributes];
 }
 
 - (NSArray *)attributes

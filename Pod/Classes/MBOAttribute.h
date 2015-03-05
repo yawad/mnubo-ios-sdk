@@ -7,6 +7,8 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <CoreGraphics/CoreGraphics.h>
+
 
 @interface MBOAttribute : NSObject <NSCopying, NSCoding>
 
@@ -21,5 +23,6 @@
 - (instancetype)initWithName:(NSString *)name category:(NSString *)category dateValue:(NSDate *)dateValue;
 
 - (instancetype)initWithName:(NSString *)name category:(NSString *)category uuidValue:(NSUUID *)uuidValue;
+
 
 @end

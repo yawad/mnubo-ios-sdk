@@ -15,6 +15,7 @@
 @property(nonatomic, readonly, copy) NSString *userId;
 @property(nonatomic, copy) NSString *username;
 @property(nonatomic, copy) NSString *password;
+@property(nonatomic, copy) NSString *confirmedPassword;
 @property(nonatomic, copy) NSString *firstName;
 @property(nonatomic, copy) NSString *lastName;
 @property(nonatomic, copy) NSDate *registrationDate;
@@ -26,5 +27,9 @@
 - (void)removeAttribute:(MBOAttribute *)attribute;
 - (void)removeAttributeAtIndex:(NSInteger)index;
 - (void)removeAllAttributes;
+
+- (NSDictionary *)toDictionary;
+
+- (instancetype)initWithDictionary:(NSDictionary *)dictionary;
 
 @end

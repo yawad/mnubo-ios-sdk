@@ -22,4 +22,6 @@
 
 - (MBOValueDefinition *)sensorValueDefinitionForName:(NSString *)name;
 
+- (instancetype)initWithDictionary:(NSDictionary *)dictionary;
+
 @end

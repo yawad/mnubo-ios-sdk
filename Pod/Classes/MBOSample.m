@@ -1,0 +1,55 @@
+//
+//  MBOSample.m
+//  ConnecteDeviceExample
+//
+//  Created by Guillaume on 2015-02-26.
+//  Copyright (c) 2015 mnubo. All rights reserved.
+//
+
+#import "MBOSample.h"
+#import "MBOMacros.h"
+#import "MBODateHelper.h"
+
+@interface MBOSample()
+
+    @property(nonatomic, copy) NSMutableDictionary *commonValues;
+
+@end
+
+
+@implementation MBOSample
+
+- (instancetype)init
+{
+    self = [super init];
+    if(self)
+    {
+        _commonValues = [[NSMutableDictionary alloc] init];
+    }
+    
+    return self;
+}
+
+- (instancetype)initWithDictionary:(NSDictionary *)dictionary
+{
+    self = [super init];
+    if(self)
+    {
+        _commonValues = [[NSMutableDictionary alloc] initWithDictionary:dictionary];
+    }
+    
+    return self;
+}
+
+- (void)addSensorWithName:(NSString *)name andDictionary:(NSDictionary *)sensorDictionary
+{
+    [_commonValues setValue:sensorDictionary forKey:name];
+}
+
+- (NSDictionary *)toDictionary
+{
+    SafeSetValueForKey(_commonValues, @"timestamp", [MBODateHelper mnuboStringFromDate:[_commonValues objectForKey:@"timestamp"]]);
+    return _commonValues;
+}
+
+@end

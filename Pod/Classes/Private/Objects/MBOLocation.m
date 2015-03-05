@@ -112,13 +112,23 @@
 
 - (NSDictionary *)toDictionary
 {
-    NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
+    NSMutableDictionary *registrationLocationDictionary = [NSMutableDictionary dictionary];
+    NSMutableDictionary *geometryDictionary = [NSMutableDictionary dictionary];
+    NSMutableDictionary *propertiesDictionary = [NSMutableDictionary dictionary];
     
-    SafeSetValueForKey(dictionary, @"latitude", [_latitude stringValue]);
-    SafeSetValueForKey(dictionary, @"longitude", [_longitude stringValue]);
-    SafeSetValueForKey(dictionary, @"elevation", [_elevation stringValue]);
+    SafeSetValueForKey(geometryDictionary, @"type", @"Point");
+    if (_longitude && _latitude)
+    {
+        SafeSetValueForKey(geometryDictionary, @"coordinates", (@[_longitude, _latitude]));
+    }
+    SafeSetValueForKey(propertiesDictionary, @"elevation", _elevation);
+    SafeSetValueForKey(registrationLocationDictionary, @"type", @"Feature");
+    SafeSetValueForKey(registrationLocationDictionary, @"geometry", geometryDictionary)
+    SafeSetValueForKey(registrationLocationDictionary, @"properties", propertiesDictionary)
     
-    return [NSDictionary dictionaryWithDictionary:dictionary];
+    
+    
+    return [NSDictionary dictionaryWithDictionary:registrationLocationDictionary];
 }
 
 @end
