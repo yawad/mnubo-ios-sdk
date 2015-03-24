@@ -43,6 +43,7 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
         _activate = YES;
         _innerAttributes = [NSMutableArray array];
         _location = [[MBOLocation alloc] init];
+        _registrationDate = [NSDate date];
     }
 
     return self;
@@ -191,11 +192,11 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
 #warning Update Data Structure
     //[_dictionary setObject:_activate ? @"yes" : @"no" forKey:kMBOObjectActivateKey];
     
-    if (_location)
+    if (_location.longitude && _location.latitude)
     {
-        _dictionary[@"registration_location"] = [_location toDictionary];
+        [_dictionary setObject:[_location toDictionary] forKey:@"registration_location"];
     }
-    
+        
     if(_deviceId.length)
     {
         [_dictionary setObject:_deviceId forKey:kMBOObjectDeviceIdKey];
@@ -211,17 +212,18 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
         [_dictionary setObject:_ownerUsername forKey:kMBOObjectOwnerKey];
     }
     
-//    NSMutableArray *attributeDictionaries = [NSMutableArray array];
-//    [_innerAttributes enumerateObjectsUsingBlock:^(MBOAttribute *attribute, NSUInteger idx, BOOL *stop)
-//    {
-//        [attributeDictionaries addObject:[attribute toDictionary]];
-//    }];
-    
+    NSMutableArray *attributeDictionaries = [NSMutableArray array];
+    [_innerAttributes enumerateObjectsUsingBlock:^(MBOAttribute *attribute, NSUInteger idx, BOOL *stop)
+    {
+        [attributeDictionaries addObject:[attribute toDictionary]];
+    }];
+  
     #warning Update Data Structure
-    //[_dictionary setObject:_innerAttributes forKey:@"attributes"];
+    if (attributeDictionaries.count > 0)
+    {
+        [_dictionary setObject:attributeDictionaries forKey:@"attributes"];
+    }
     
-    SafeSetValueForKey(_dictionary, @"attributes", _innerAttributes)
-
     SafeSetValueForKey(_dictionary, @"registration_date", [MBODateHelper mnuboStringFromDate:_registrationDate]);
 
     if (_collectionId.length)

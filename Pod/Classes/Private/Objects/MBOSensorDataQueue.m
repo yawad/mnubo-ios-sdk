@@ -11,6 +11,7 @@
 #import "Reachability.h"
 #import "mnubo.h"
 
+
 @interface MBOSensorDataQueue()
 {
     __weak mnubo *_mnuboSDK;
@@ -89,6 +90,34 @@
     }];
 }
 
+- (void)addSample:(MBOSample *)sample objectId:(NSString *)objectId deviceId:(NSString *)deviceId completion:(void (^)(NSString *queueIdentifiyer))completion
+{
+    [_diskAccessQueue addOperationWithBlock:^
+     {
+         NSMutableDictionary *objectData = [NSMutableDictionary dictionary];
+         if(sample)
+         {
+             objectData[@"sample"] = sample;
+         }
+         
+         if(objectId.length > 0)
+         {
+             objectData[@"objectId"] = objectId;
+         }
+         
+         if(deviceId.length > 0)
+         {
+             objectData[@"deviceId"] = deviceId;
+         }
+         
+         NSData *encodedData = [NSKeyedArchiver archivedDataWithRootObject:objectData];
+         NSString *queueIdentifier = [[NSUUID UUID] UUIDString];
+         [MBOSensorDataQueue saveData:encodedData forFileIdentifier:queueIdentifier inSendingPath:YES];
+         
+         if(completion) completion(queueIdentifier);
+     }];
+}
+
 - (void)removeSensorDataWithIdentifier:(NSString *)queueIdentifiyer
 {
     [_diskAccessQueue addOperationWithBlock:^
@@ -134,14 +163,7 @@
     if(encodedJobData)
     {
         NSDictionary *jobData = [NSKeyedUnarchiver unarchiveObjectWithData:encodedJobData];
-        if([jobData stringForKey:@"deviceId"].length > 0)
-        {
-            [_mnuboSDK sendSensorData:[jobData arrayForKey:@"sensorDatas"] commonData:[jobData objectForKey:@"commonData"] forDeviceId:[jobData stringForKey:@"deviceId"] completion:nil];
-        }
-        else
-        {
-            [_mnuboSDK sendSensorData:[jobData arrayForKey:@"sensorDatas"] commonData:[jobData objectForKey:@"commonData"] forObjectId:[jobData stringForKey:@"objectId"] completion:nil];
-        }
+        [_mnuboSDK sendSample:[jobData objectForKey:@"sample"] withSensorName:@"" withObjectId:[jobData stringForKey:@"objectid"] orDeviceId:[jobData stringForKey:@"deviceId"] publicSensor:NO allowRefreshToken:YES completion:nil];
     }
 
     // The _mnuboSDK sendSensorData will put back a instance of that new job in the "sending queue", so we can delete this one right away

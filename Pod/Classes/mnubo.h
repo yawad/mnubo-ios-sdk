@@ -62,23 +62,11 @@ typedef NS_ENUM(NSUInteger, MBOErrorCode)
 
 
 /// Sensor data
-- (void)sendSensorData:(NSArray *)sensorDatas forObjectId:(NSString *)objectId completion:(void (^)(MBOError *error))completion;
-- (void)sendSensorData:(NSArray *)sensorDatas commonData:(MBOCommonSensorData *)commonData forObjectId:(NSString *)objectId completion:(void (^)(MBOError *error))completion;
 
-- (void)sendSensorData:(NSArray *)sensorDatas forDeviceId:(NSString *)deviceId completion:(void (^)(MBOError *error))completion;
-- (void)sendSensorData:(NSArray *)sensorDatas commonData:(MBOCommonSensorData *)commonData forDeviceId:(NSString *)deviceId completion:(void (^)(MBOError *error))completion;
+- (void)sendSample:(MBOSample *)sample withSensorName:(NSString *)sensorName withObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId publicSensor:(BOOL)publicSensor allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOError *error))completion;
 
-- (void)fetchLastSensorDataOfObjectId:(NSString *)objectId sensorDefinition:(MBOSensorDefinition *)sensorDefinition completion:(void (^)(MBOSensorData *sensorData, MBOError *error))completion;
-- (void)fetchLastSensorDataOfDeviceId:(NSString *)deviceId sensorDefinition:(MBOSensorDefinition *)sensorDefinition completion:(void (^)(MBOSensorData *sensorData, MBOError *error))completion;
+- (void)fetchLastSampleObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOSample *sample, MBOError *error))completion;
 
-- (void)fetchSensorDatasOfObjectId:(NSString *)objectId sensorDefinition:(MBOSensorDefinition *)sensorDefinition fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion;
-- (void)fetchSensorDatasOfDeviceId:(NSString *)deviceId sensorDefinition:(MBOSensorDefinition *)sensorDefinition fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion;
-
-- (void)fetchSensorDataCountOfObjectId:(NSString *)objectId sensorDefinition:(MBOSensorDefinition *)sensorDefinition fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate completion:(void (^)(NSUInteger count, MBOError *error))completion;
-- (void)fetchSensorDataCountOfDeviceId:(NSString *)deviceId sensorDefinition:(MBOSensorDefinition *)sensorDefinition fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate completion:(void (^)(NSUInteger count, MBOError *error))completion;
-
-
-- (void)sendSample:(MBOSample *)sample withObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId completion:(void (^)(MBOError *error))completion;
 /// Tokens
 - (BOOL)isUserConnected;
 
@@ -89,5 +77,7 @@ typedef NS_ENUM(NSUInteger, MBOErrorCode)
 - (void)resetPasswordForUsername:(NSString *)username;
 
 - (void)confirmResetPasswordForUsername:(NSString *)username newPassword:(NSString *)newPassword token:(NSString *)token;
+
+- (void)confirmEmailForUsername:(NSString *)username password:(NSString *)password token:(NSString *)token;
 
 @end

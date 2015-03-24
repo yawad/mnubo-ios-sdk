@@ -118,10 +118,10 @@
     
     SafeSetValueForKey(geometryDictionary, @"type", @"Point");
     if (_longitude && _latitude)
-    {
         SafeSetValueForKey(geometryDictionary, @"coordinates", (@[_longitude, _latitude]));
-    }
+
     SafeSetValueForKey(propertiesDictionary, @"elevation", _elevation);
+    
     SafeSetValueForKey(registrationLocationDictionary, @"type", @"Feature");
     SafeSetValueForKey(registrationLocationDictionary, @"geometry", geometryDictionary)
     SafeSetValueForKey(registrationLocationDictionary, @"properties", propertiesDictionary)

@@ -25,6 +25,7 @@
     if(self)
     {
         _commonValues = [[NSMutableDictionary alloc] init];
+        [_commonValues setObject:[NSDate date] forKey:@"registration_date"];
     }
     
     return self;
@@ -45,6 +46,50 @@
 {
     [_commonValues setValue:sensorDictionary forKey:name];
 }
+
+- (id)initWithCoder:(NSCoder *)aDecoder
+{
+    self = [super init];
+    
+    if (self)
+    {
+        _commonValues = [aDecoder decodeObjectForKey:@"commonValues"];
+    }
+    
+    return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)aCoder
+{
+    [aCoder encodeObject:_commonValues forKey:@"commonValues"];
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+    MBOSample *copy = [[MBOSample alloc] initWithDictionary:_commonValues];
+    return copy;
+}
+
+- (BOOL)isEqual:(MBOSample *)otherSample
+{
+    if (![otherSample isKindOfClass:[self class]])
+    {
+        return NO;
+    }
+    
+    return IsEqualToDictionary(_commonValues, otherSample.commonValues);
+}
+
+- (NSUInteger)hash
+{
+    NSUInteger hash = 0;
+    hash += [_commonValues hash];
+    return hash;
+}
+
+//------------------------------------------------------------------------------
+#pragma mark Public method
+//------------------------------------------------------------------------------
 
 - (NSDictionary *)toDictionary
 {

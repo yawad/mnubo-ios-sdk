@@ -30,31 +30,29 @@ NSString * const kMnuboUserRefreshTokenKey = @"com.mnubo.sdk.user_refresh_token"
 NSString * const kMnuboUserExpiresInKey = @"com.mnubo.sdk.user_expires_in";
 NSString * const kMnuboUserTokenTimestampKey = @"com.mnubo.sdk.user_token_timestamp";
 
-NSString * const kMnuboRestApiBaseURL = @"https://rest.sandbox.mnubo.com:443/api/v3";
-
 /// Tokens
 NSString * const kMnuboGetTokenPath = @"/oauth/token";
-NSString * const kMnuboResetPasswordPath = @"/users/%@/password";
-NSString * const kMnuboConfirmEmailPath= @"/users/%@/confirmation";
+NSString * const kMnuboResetPasswordPath = @"/api/v2/users/%@/password";
+NSString * const kMnuboConfirmEmailPath= @"/api/v2/users/%@/confirmation";
 
 /// Users
-NSString * const kMnuboCreateUserPath = @"/users";
-NSString * const kMnuboUpdateUserPath = @"/users/%@";
-NSString * const kMnuboDeleteUserPath = @"/users/%@";
-NSString * const kMnuboGetUserPath = @"/users/%@";
+NSString * const kMnuboCreateUserPath = @"/api/v2/users";
+NSString * const kMnuboUpdateUserPath = @"/api/v2/users/%@";
+NSString * const kMnuboDeleteUserPath = @"/api/v2/users/%@";
+NSString * const kMnuboGetUserPath = @"/api/v2/users/%@";
 
 
 /// Objects
-NSString * const kMnuboCreateObjectPath = @"/objects";
-NSString * const kMnuboGetObjectPath = @"/objects/%@";
-NSString * const kMnuboUpdateObjectPath = @"/objects/%@";
-NSString * const kMnuboDeleteObjectPath = @"/objects/%@";
+NSString * const kMnuboCreateObjectPath = @"/api/v2/objects";
+NSString * const kMnuboGetObjectPath = @"/api/v2/objects/%@";
+NSString * const kMnuboUpdateObjectPath = @"/api/v2/objects/%@";
+NSString * const kMnuboDeleteObjectPath = @"/api/v2/objects/%@";
 
 
 /// Sensor Data
-NSString * const kMnuboPostSensorDataPath = @"/objects/%@/samples";
-NSString * const kMnuboPostPublicSensorDataPath = @"/objects/%@/sensors/%@/samples";
-NSString * const kMnuboGetSensorDataPath = @"/objects/%@/sensors/%@/samples";
+NSString * const kMnuboPostSensorDataPath = @"/api/v2/objects/%@/samples";
+NSString * const kMnuboPostPublicSensorDataPath = @"/api/v2/objects/%@/sensors/%@/samples";
+NSString * const kMnuboGetSensorDataPath = @"/api/v2/objects/%@/sensors/%@/samples";
 
 
 @interface mnubo()
@@ -94,7 +92,7 @@ static mnubo *_sharedInstance = nil;
     static dispatch_once_t unique = 0;
     
     dispatch_once(&unique, ^{
-        _sharedInstance = [[self alloc] initWithAccountName:@"" namespace:@"" clientId:clientId clientSecret:clientSecret hostname:hostname];
+        _sharedInstance = [[self alloc] initWithClientId:clientId clientSecret:clientSecret hostname:hostname];
     });
     
     return _sharedInstance;
@@ -105,9 +103,7 @@ static mnubo *_sharedInstance = nil;
     return _sharedInstance;
 }
 
-- (instancetype)initWithAccountName:(NSString *)accountName
-                          namespace:(NSString *)namespace
-                           clientId:(NSString *)clientId
+- (instancetype)initWithClientId:(NSString *)clientId
                        clientSecret:(NSString *)clientSecret
                            hostname:(NSString *)hostname
 
@@ -122,11 +118,9 @@ static mnubo *_sharedInstance = nil;
 
         _httpClient = [[MBOBasicHttpClient alloc] init];
 
-        _accountName = accountName;
         _clientId = clientId;
 
         _clientCredentialsTokenBasicAuthentication = [[NSString stringWithFormat:@"%@:%@", clientId, clientSecret] base64Encode];
-
 
         _baseURL = hostname;
 
@@ -188,22 +182,6 @@ static mnubo *_sharedInstance = nil;
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
-- (void)setUseSandbox:(BOOL)useSandbox
-{
-    if(_useSandbox == useSandbox) return;
-
-    _useSandbox = useSandbox;
-
-    if(_useSandbox)
-    {
-        _baseURL = [NSString stringWithFormat:@"https://sandbox.%@:4443", kMnuboRestApiBaseURL];
-    }
-    else
-    {
-        _baseURL = [NSString stringWithFormat:@"https://%@.%@", _accountName, kMnuboRestApiBaseURL];
-    }
-}
-
 //------------------------------------------------------------------------------
 #pragma mark User management
 //------------------------------------------------------------------------------
@@ -260,11 +238,10 @@ static mnubo *_sharedInstance = nil;
     }
 
     NSString *getUsernamePath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboUpdateUserPath, [user.username urlEncode]]];
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
-    NSDictionary *parameters = @{};
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _clientAccessToken] };
 
     __weak mnubo *weakSelf = self;
-    [_httpClient PUT:getUsernamePath headers:headers parameters:parameters data:[user toDictionary] completion:^(id data, NSError *error)
+    [_httpClient PUT:getUsernamePath headers:headers parameters:nil data:[user toDictionary] completion:^(id data, NSError *error)
     {
         if(!error)
         {
@@ -272,7 +249,7 @@ static mnubo *_sharedInstance = nil;
         }
         else if(error.code == 401 && allowRefreshToken)
         {
-            [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
+            [weakSelf getClientAccessTokenCompletion:^(MBOError *error)
             {
                 if(!error)
                 {
@@ -300,10 +277,9 @@ static mnubo *_sharedInstance = nil;
 {
     NSString *getUsernamePath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboGetUserPath, [username urlEncode]]];
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _clientAccessToken] };
-    NSDictionary *parameters = @{};
     
     __weak mnubo *weakSelf = self;
-    [_httpClient GET:getUsernamePath headers:headers parameters:parameters completion:^(id data, NSError *error)
+    [_httpClient GET:getUsernamePath headers:headers parameters:nil completion:^(id data, NSError *error)
      {
          if(!error)
          {
@@ -346,10 +322,9 @@ static mnubo *_sharedInstance = nil;
 {
     NSString *deleteUserPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboDeleteUserPath, [username urlEncode]]];
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _clientAccessToken] };
-    NSDictionary *parameters = @{};
 
     __weak mnubo *weakSelf = self;
-    [_httpClient DELETE:deleteUserPath headers:headers parameters:parameters completion:^(id data, NSError *error)
+    [_httpClient DELETE:deleteUserPath headers:headers parameters:nil completion:^(id data, NSError *error)
     {
         if(!error)
         {
@@ -443,14 +418,11 @@ static mnubo *_sharedInstance = nil;
     NSString *createObjectPath = [NSString stringWithFormat:@"%@%@", _baseURL, kMnuboCreateObjectPath];
     
     NSLog(@"Create object with path : %@", createObjectPath);
-    
+
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
-    
-    NSDictionary *parameters = @{};
-    //NSDictionary *parameters = @{ @"clientid" : _clientId, @"updateifexists" : updateIfAlreadyExist ? @"1" : @"0"};
 
     __weak mnubo *weakSelf = self;
-    [_httpClient POST:createObjectPath headers:headers parameters:parameters data:[object toDictionary] completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
+    [_httpClient POST:createObjectPath headers:headers parameters:nil data:[object toDictionary] completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
     {
         if(!error)
         {
@@ -671,331 +643,53 @@ static mnubo *_sharedInstance = nil;
 #pragma mark Sensor data
 //------------------------------------------------------------------------------
 
-- (void)sendSensorData:(NSArray *)sensorDatas forObjectId:(NSString *)objectId completion:(void (^)(MBOError *error))completion
-{
-    [self sendSensorData:sensorDatas commonData:nil forObjectId:objectId completion:completion];
-}
 
-- (void)sendSensorData:(NSArray *)sensorDatas commonData:(MBOCommonSensorData *)commonData forObjectId:(NSString *)objectId completion:(void (^)(MBOError *error))completion
+- (void)sendSample:(MBOSample *)sample withSensorName:(NSString *)sensorName withObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId publicSensor:(BOOL)publicSensor allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOError *error))completion
 {
-    [self sendSensorData:sensorDatas commonData:commonData withObjectId:objectId orDeviceId:nil allowRefreshToken:YES completion:completion];
-}
-
-- (void)sendSensorData:(NSArray *)sensorDatas forDeviceId:(NSString *)deviceId completion:(void (^)(MBOError *error))completion
-{
-    [self sendSensorData:sensorDatas commonData:nil forDeviceId:deviceId completion:completion];
-}
-
-- (void)sendSensorData:(NSArray *)sensorDatas commonData:(MBOCommonSensorData *)commonData forDeviceId:(NSString *)deviceId completion:(void (^)(MBOError *error))completion
-{
-    [self sendSensorData:sensorDatas commonData:commonData withObjectId:nil orDeviceId:deviceId allowRefreshToken:YES completion:completion];
-}
-
-- (void)sendSensorData:(NSArray *)sensorDatas commonData:(MBOCommonSensorData *)commonData withObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOError *error))completion
-{
-    NSAssert(sensorDatas.count > 0, @"sensorDatas can't be empty");
-    NSAssert([sensorDatas[0] isKindOfClass:[MBOSensorData class]], @"sensorDatas has to be an array of instance of MBOSensorData");
-
     BOOL byObjectId = objectId.length > 0;
-
-    NSString *postSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboPostSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode]]];
+    
+    NSString *postSensorPath;
+    if (publicSensor)
+    {
+        postSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboPostPublicSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode], sensorName]];
+    }
+    else
+    {
+        postSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboPostSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode]]];
+    }
+    
     
     NSLog(@"Sample sent with path : %@", postSensorPath);
-    
+
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
+
     NSDictionary *parameters = @{ @"id_type" : byObjectId ? @"objectid" : @"deviceid"};
+
+    if (sample == nil) {
+         if (completion)  completion([[MBOError alloc] initWithDomain:@"com.mnubo.sdk" code:0 userInfo:nil]);
+    } else {
+    NSDictionary *data = @{@"samples": @[[sample toDictionary]]};
 
     __weak mnubo *weakSelf = self;
     __weak id<MBOHttpClient> weakHttpClient = _httpClient;
     __weak MBOSensorDataQueue *weakSensorDataQueue = _sensorDataQueue;
-    [_sensorDataQueue addSensorData:sensorDatas commonData:commonData objectId:objectId deviceId:deviceId completion:^(NSString *queueIdentifiyer)
-    {
-        [weakHttpClient POST:postSensorPath headers:headers parameters:parameters data:[MBOSensorData dictionaryFromSensorDatas:sensorDatas commonData:commonData] completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
-        {
-            if(!error)
-            {
-                [weakSensorDataQueue removeSensorDataWithIdentifier:queueIdentifiyer];
-                if(completion) completion(nil);
-            }
-            else if(error.code == 401 && allowRefreshToken)
-            {
-                [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
-                {
-                    [weakSensorDataQueue removeSensorDataWithIdentifier:queueIdentifiyer];
-                    if(!error)
-                    {
-                        [weakSelf sendSensorData:sensorDatas commonData:commonData withObjectId:objectId orDeviceId:deviceId allowRefreshToken:NO completion:completion];
-                    }
-                    else
-                    {
-                        if(completion) completion(error);
-                    }
-                }];
-            }
-            else
-            {
-                MBOError *builtError = nil;
-                if([mnubo isErrorRetryable:error] && !weakSelf.disableSensorDataInternalRetry)
-                {
-                    builtError = [MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeWillBeRetryLaterAutomatically userInfo:nil];
-                    [weakSensorDataQueue moveToRetryQueueSensorDataWithIdentifier:queueIdentifiyer];
-                }
-                else
-                {
-                    builtError = [MBOError errorWithError:error extraInfo:data];
-                    [weakSensorDataQueue removeSensorDataWithIdentifier:queueIdentifiyer];
-                }
-
-                if(completion) completion(builtError);
-            }
-        }];
-    }];
-}
-
-- (void)fetchLastSensorDataOfObjectId:(NSString *)objectId sensorDefinition:(MBOSensorDefinition *)sensorDefinition completion:(void (^)(MBOSensorData *sensorData, MBOError *error))completion
-{
-    [self fetchLastSensorDataObjectId:objectId orDeviceId:nil sensorDefinition:sensorDefinition allowRefreshToken:YES completion:completion];
-}
-
-- (void)fetchLastSensorDataOfDeviceId:(NSString *)deviceId sensorDefinition:(MBOSensorDefinition *)sensorDefinition completion:(void (^)(MBOSensorData *sensorData, MBOError *error))completion
-{
-    [self fetchLastSensorDataObjectId:nil orDeviceId:deviceId sensorDefinition:sensorDefinition allowRefreshToken:YES completion:completion];
-}
-
-- (void)fetchLastSensorDataObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId sensorDefinition:(MBOSensorDefinition *)sensorDefinition allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOSensorData *sensorData, MBOError *error))completion
-{
-    BOOL byObjectId = objectId.length > 0;
-    
-    NSString *getSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboGetSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode], [sensorDefinition.name urlEncode]]];
-    
-    NSLog(@"Sample fetched with path : %@", getSensorPath);
-    
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
-    NSDictionary *parameters = @{@"id_type" : byObjectId ? @"objectid" : @"deviceid",
-                                  @"value" : @"last" };
-
-    __weak mnubo *weakSelf = self;
-    [_httpClient GET:getSensorPath headers:headers parameters:parameters completion:^(id data, NSError *error)
-    {
-        if(!error)
-        {
-            BOOL invalidData = YES;
-            if([data isKindOfClass:[NSDictionary class]])
-            {
-                NSDictionary *rawData = data;
-                NSArray *samples = [rawData arrayForKey:@"samples"];
-                
-                if(samples.count > 0 && [samples[0] isKindOfClass:[NSDictionary class]])
-                {
-                    invalidData = NO;
-                    if(completion) completion([[MBOSensorData alloc] initWithSensorDefinition:sensorDefinition andDictionary:samples[0]], nil);
-                }
-            }
-
-            if(invalidData)
-            {
-                if(completion) completion(nil, [MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeInvalidDataReceived userInfo:nil]);
-            }
-        }
-        else if(error.code == 401 && allowRefreshToken)
-        {
-            [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
-             {
-                 if(!error)
-                 {
-                     [weakSelf fetchLastSensorDataObjectId:objectId orDeviceId:deviceId sensorDefinition:sensorDefinition allowRefreshToken:NO completion:completion];
-                 }
-                 else
-                 {
-                     if(completion) completion(nil, error);
-                 }
-             }];
-        }
-        else
-        {
-            if(completion) completion(nil, [MBOError errorWithError:error extraInfo:data]);
-        }
-    }];
-}
-
-- (void)fetchSensorDatasOfObjectId:(NSString *)objectId sensorDefinition:(MBOSensorDefinition *)sensorDefinition fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
-{
-    [self fetchSensorDatasOfObjectId:objectId orDeviceId:nil sensorDefinition:sensorDefinition fromStartDate:startDate toEndDate:endDate allowRefreshToken:YES completion:completion];
-}
-
-- (void)fetchSensorDatasOfDeviceId:(NSString *)deviceId sensorDefinition:(MBOSensorDefinition *)sensorDefinition fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
-{
-    [self fetchSensorDatasOfObjectId:nil orDeviceId:deviceId sensorDefinition:sensorDefinition fromStartDate:startDate toEndDate:endDate allowRefreshToken:YES completion:completion];
-}
-
-- (void)fetchSensorDatasOfObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId sensorDefinition:(MBOSensorDefinition *)sensorDefinition fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
-{
-    BOOL byObjectId = objectId.length > 0;
-    
-    NSString *getSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboGetSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode], [sensorDefinition.name urlEncode]]];
-    
-    NSLog(@"Sample fetched with path : %@", getSensorPath);
-    
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
-    NSDictionary *parameters = @{ @"clientid" : _clientId,
-                                  @"id_type" : byObjectId ? @"objectid" : @"deviceid",
-                                  @"value" : @"samples",
-                                  @"startdate" : [MBODateHelper mnuboStringFromDate:startDate],
-                                  @"enddate" : [MBODateHelper mnuboStringFromDate:endDate] };
-
-    __weak mnubo *weakSelf = self;
-    [_httpClient GET:getSensorPath headers:headers parameters:parameters completion:^(id data, NSError *error)
-    {
-        if(!error)
-        {
-            if([data isKindOfClass:[NSDictionary class]])
-            {
-                NSDictionary *rawData = data;
-
-                NSArray *samples = [rawData arrayForKey:@"samples"];
-                __block NSMutableArray *sensorDatas = [NSMutableArray arrayWithCapacity:samples.count];
-                [samples enumerateObjectsUsingBlock:^(NSDictionary *sampleData, NSUInteger idx, BOOL *stop)
-                {
-                    if([sampleData isKindOfClass:[NSDictionary class]])
-                    {
-                        [sensorDatas addObject:[[MBOSensorData alloc] initWithSensorDefinition:sensorDefinition andDictionary:sampleData]];
-                    }
-                }];
-
-                if(completion) completion(sensorDatas, nil);
-            }
-            else
-            {
-                if(completion) completion(nil, [MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeInvalidDataReceived userInfo:nil]);
-            }
-        }
-        else if(error.code == 401 && allowRefreshToken)
-        {
-            [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
-            {
-                if(!error)
-                {
-                    [weakSelf fetchSensorDatasOfObjectId:objectId orDeviceId:deviceId sensorDefinition:sensorDefinition fromStartDate:startDate toEndDate:endDate allowRefreshToken:NO completion:completion];
-                }
-                else
-                {
-                    if(completion) completion(nil, error);
-                }
-            }];
-        }
-        else
-        {
-            if(completion) completion(nil, [MBOError errorWithError:error extraInfo:data]);
-        }
-    }];
-}
-
-- (void)fetchSensorDataCountOfObjectId:(NSString *)objectId sensorDefinition:(MBOSensorDefinition *)sensorDefinition fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate completion:(void (^)(NSUInteger count, MBOError *error))completion
-{
-    [self fetchSensorDataCountOfObjectId:objectId orDeviceId:nil sensorDefinition:sensorDefinition fromStartDate:startDate toEndDate:endDate allowRefreshToken:YES completion:completion];
-}
-
-- (void)fetchSensorDataCountOfDeviceId:(NSString *)deviceId sensorDefinition:(MBOSensorDefinition *)sensorDefinition fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate completion:(void (^)(NSUInteger count, MBOError *error))completion
-{
-    [self fetchSensorDataCountOfObjectId:nil orDeviceId:deviceId sensorDefinition:sensorDefinition fromStartDate:startDate toEndDate:endDate allowRefreshToken:YES completion:completion];
-}
-
-- (void)fetchSensorDataCountOfObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId sensorDefinition:(MBOSensorDefinition *)sensorDefinition fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(NSUInteger count, MBOError *error))completion
-{
-    BOOL byObjectId = objectId.length > 0;
-
-    NSString *getSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboGetSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode], [sensorDefinition.name urlEncode]]];
-    
-    NSLog(@"Sample fetched with path : %@", getSensorPath);
-    
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
-    NSDictionary *parameters = @{ @"clientid" : _clientId,
-                                  @"id_type" : byObjectId ? @"objectid" : @"deviceid",
-                                  @"value" : @"count",
-                                  @"startdate" : [MBODateHelper mnuboStringFromDate:startDate],
-                                  @"enddate" : [MBODateHelper mnuboStringFromDate:endDate] };
-
-    __weak mnubo *weakSelf = self;
-    [_httpClient GET:getSensorPath headers:headers parameters:parameters completion:^(id data, NSError *error)
-    {
-        if(!error)
-        {
-            BOOL invalidData = YES;
-            if([data isKindOfClass:[NSDictionary class]])
-            {
-                NSDictionary *rawData = data;
-                NSArray *samples = [rawData arrayForKey:@"samples"];
-                if(samples.count > 0 && [samples[0] isKindOfClass:[NSDictionary class]])
-                {
-                    NSDictionary *values = (NSDictionary *)samples[0];
-                    NSDictionary *value = [values dictionaryForKey:@"values"];
-                    if(value)
-                    {
-                        NSNumber *count = [value numberForKey:@"count"];
-                        if(completion) completion(count.unsignedIntegerValue, nil);
-                        invalidData = NO;
-                    }
-                }
-            }
-
-            if(invalidData)
-            {
-                if(completion) completion(0, [MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeInvalidDataReceived userInfo:nil]);
-            }
-        }
-        else if(error.code == 401 && allowRefreshToken)
-        {
-            [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
-            {
-                if(!error)
-                {
-                    [weakSelf fetchSensorDataCountOfObjectId:objectId orDeviceId:deviceId sensorDefinition:sensorDefinition fromStartDate:startDate toEndDate:endDate allowRefreshToken:NO completion:completion];
-                }
-                else
-                {
-                    if(completion) completion(0, error);
-                }
-            }];
-        }
-        else
-        {
-            if(completion) completion(0, [MBOError errorWithError:error extraInfo:data]);
-        }
-    }];
-}
-
-
-#pragma mark Sensor Sample 2.0
-
-
-- (void)sendSample:(MBOSample *)sample withObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId completion:(void (^)(MBOError *error))completion
-{
-    BOOL byObjectId = objectId.length > 0;
-    
-    NSString *postSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboPostSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode]]];
-    
-    NSLog(@"Sample sent with path : %@", postSensorPath);
-    
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
-    NSDictionary *parameters = @{ @"id_type" : byObjectId ? @"objectid" : @"deviceid"};
-    
-    NSDictionary *data = @{@"samples": @[[sample toDictionary]]};
-    
-    __weak mnubo *weakSelf = self;
-
-     [_httpClient POST:postSensorPath headers:headers parameters:parameters data:data completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
+    [_sensorDataQueue addSample:sample objectId:objectId deviceId:deviceId completion:^(NSString *queueIdentifiyer)
+     {
+     [weakHttpClient POST:postSensorPath headers:headers parameters:parameters data:data completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
       {
           if(!error)
           {
+              [weakSensorDataQueue removeSensorDataWithIdentifier:queueIdentifiyer];
               if(completion) completion(nil);
           }
-          else if(error.code == 401)
+          else if(error.code == 401 && allowRefreshToken)
           {
               [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
                {
+                   [weakSensorDataQueue removeSensorDataWithIdentifier:queueIdentifiyer];
                    if(!error)
                    {
-                       [weakSelf sendSample:sample withObjectId:objectId orDeviceId:deviceId completion:completion];
+                       [weakSelf sendSample:sample withSensorName:sensorName withObjectId:objectId orDeviceId:deviceId  publicSensor:publicSensor allowRefreshToken:NO completion:completion];
                    }
                    else
                    {
@@ -1009,67 +703,76 @@ static mnubo *_sharedInstance = nil;
               if([mnubo isErrorRetryable:error] && !weakSelf.disableSensorDataInternalRetry)
               {
                   builtError = [MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeWillBeRetryLaterAutomatically userInfo:nil];
+                  [weakSensorDataQueue moveToRetryQueueSensorDataWithIdentifier:queueIdentifiyer];
               }
               else
               {
                   builtError = [MBOError errorWithError:error extraInfo:data];
+                  [weakSensorDataQueue removeSensorDataWithIdentifier:queueIdentifiyer];
               }
               
               if(completion) completion(builtError);
           }
       }];
+     }];
+    }
 }
 
-- (void)sendToPublicSensorASample:(MBOSample *)sample withName:(NSString *)sensorName withObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId completion:(void (^)(MBOError *error))completion
+- (void)fetchLastSampleObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOSample *sample, MBOError *error))completion
 {
-    BOOL byObjectId = objectId.length > 0;
-    
-    NSString *postSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboPostPublicSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode], sensorName]];
-    
-    NSLog(@"Sample sent with path : %@", postSensorPath);
-    
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
-    NSDictionary *parameters = @{ @"id_type" : byObjectId ? @"objectid" : @"deviceid"};
-    
-    NSDictionary *data = @{@"samples": @[[sample toDictionary]]};
-    
-    __weak mnubo *weakSelf = self;
-    
-    [_httpClient POST:postSensorPath headers:headers parameters:parameters data:data completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
+  BOOL byObjectId = objectId.length > 0;
+  
+  NSString *getSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboGetSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode], sensorName]];
+  
+  NSLog(@"Sample fetched with path : %@", getSensorPath);
+  
+  NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
+  NSDictionary *parameters = @{@"id_type" : byObjectId ? @"objectid" : @"deviceid",
+                               @"value" : @"last" };
+  
+  __weak mnubo *weakSelf = self;
+  [_httpClient GET:getSensorPath headers:headers parameters:parameters completion:^(id data, NSError *error)
+   {
+     if(!error)
      {
-         if(!error)
+       BOOL invalidData = YES;
+       if([data isKindOfClass:[NSDictionary class]])
+       {
+         NSDictionary *rawData = data;
+         NSArray *samples = [rawData arrayForKey:@"samples"];
+         
+         if(samples.count > 0 && [samples[0] isKindOfClass:[NSDictionary class]])
          {
-             if(completion) completion(nil);
+             invalidData = NO;
+             NSLog(@"%@", ((NSDictionary *)samples[0]).description);
+             if(completion) completion([[MBOSample alloc] initWithDictionary:samples[0]], nil);
          }
-         else if(error.code == 401)
-         {
-             [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
-              {
-                  if(!error)
-                  {
-                      [weakSelf sendSample:sample withObjectId:objectId orDeviceId:deviceId completion:completion];
-                  }
-                  else
-                  {
-                      if(completion) completion(error);
-                  }
-              }];
-         }
-         else
-         {
-             MBOError *builtError = nil;
-             if([mnubo isErrorRetryable:error] && !weakSelf.disableSensorDataInternalRetry)
-             {
-                 builtError = [MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeWillBeRetryLaterAutomatically userInfo:nil];
-             }
-             else
-             {
-                 builtError = [MBOError errorWithError:error extraInfo:data];
-             }
-             
-             if(completion) completion(builtError);
-         }
-     }];
+       }
+       
+       if(invalidData)
+       {
+         if(completion) completion(nil, [MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeInvalidDataReceived userInfo:nil]);
+       }
+     }
+     else if(error.code == 401 && allowRefreshToken)
+     {
+       [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
+        {
+          if(!error)
+          {
+            [weakSelf fetchLastSampleObjectId:objectId orDeviceId:deviceId sensorName:sensorName allowRefreshToken:NO completion:completion];
+          }
+          else
+          {
+            if(completion) completion(nil, error);
+          }
+        }];
+     }
+     else
+     {
+       if(completion) completion(nil, [MBOError errorWithError:error extraInfo:data]);
+     }
+   }];
 }
 
 //------------------------------------------------------------------------------
@@ -1171,7 +874,30 @@ static mnubo *_sharedInstance = nil;
      }];
 }
 
-- (BOOL)isTokenValid
+- (BOOL)isClientAccessTokenValidAutomaticRefresh:(BOOL)refresh
+{
+    NSTimeInterval interval = [_userTokenTimestamp timeIntervalSinceNow];
+    double remainingValidity = interval + [_userExpiresIn doubleValue];
+    
+    NSLog(@"Validity : %f", remainingValidity);
+    
+    if (remainingValidity <= 0 && refresh)
+    {
+        [self getClientAccessTokenCompletion:^(MBOError *error) {
+            if (!error)
+                NSLog(@"Client Access Token refreshed");
+            else
+                NSLog(@"ERROR while refreshing the token.");
+        }];
+        return NO;
+    }
+    else
+    {
+        return YES;
+    }
+}
+
+- (BOOL)isUserAccessTokenValidAutomaticRefresh:(BOOL)refresh
 {
     if (_userRefreshToken)
     {
@@ -1180,7 +906,7 @@ static mnubo *_sharedInstance = nil;
         
         NSLog(@"Validity : %f", remainingValidity);
         
-        if (remainingValidity <= 0)
+        if (remainingValidity <= 0 && refresh)
         {
             [self getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error) {
                 if (!error)
@@ -1238,12 +964,16 @@ static mnubo *_sharedInstance = nil;
     NSLog(@"Reset password with path : %@", resetPasswordPath);
     
     NSDictionary *headers = @{ @"Authorization": [NSString stringWithFormat:@"Bearer %@", _clientAccessToken]};
-    
+
     [_httpClient DELETE:resetPasswordPath headers:headers parameters:nil completion:^(id data, NSError *error)
     {
         if (!error)
         {
             NSLog(@"Password has been reset successfully");
+        }
+        else if(error.code == 401)
+        {
+            NSLog(@"Error with the authentification");
         }
         else
         {
@@ -1268,6 +998,10 @@ static mnubo *_sharedInstance = nil;
          {
              NSLog(@"Password reset has been confirmed successfully");
          }
+         else if(error.code == 401)
+         {
+             NSLog(@"Error with the authentification");
+         }
          else
          {
              NSLog(@"Error while confirming the reset password");
@@ -1285,12 +1019,16 @@ static mnubo *_sharedInstance = nil;
     
     NSDictionary *headers = @{ @"Authorization": [NSString stringWithFormat:@"Bearer %@", _userAccessToken]};
     NSDictionary *data = @{ @"token": token, @"password": password};
-    
+
     [_httpClient POST:confirmEmailPath headers:headers parameters:nil data:data completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
      {
          if (!error)
          {
              NSLog(@"Email has been confirmed successfully");
+         }
+         else if(error.code == 401)
+         {
+             NSLog(@"Error with the authentification");
          }
          else
          {
@@ -1319,5 +1057,7 @@ static mnubo *_sharedInstance = nil;
 
     return NO;
 }
+
+
 
 @end

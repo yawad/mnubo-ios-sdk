@@ -37,6 +37,8 @@
 
 - (MBOSensorDefinition *)getSensorDefinitionOfSensorName:(NSString *)sensorName;
 
+- (NSDictionary *)toDictionary;
+
 - (void)setAttributes:(NSArray *)attributes;
 
 - (void)addAttribute:(MBOAttribute *)attribute;

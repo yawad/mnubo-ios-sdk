@@ -38,6 +38,7 @@ NSString const * kMBOUserAttributesKey = @"attributes";
     if (self)
     {
         _innerAttributes = [NSMutableArray array];
+        _registrationDate = [NSDate date];
     }
     
     return self;
@@ -228,7 +229,8 @@ NSString const * kMBOUserAttributesKey = @"attributes";
             [attributeDictionaries addObject:attributeDictionary];
         }
     }];
-    if (_innerAttributes.count)
+
+    if (attributeDictionaries.count > 0)
     {
         [dictionary setObject:[NSArray arrayWithArray:attributeDictionaries] forKey:@"attributes"];
     }

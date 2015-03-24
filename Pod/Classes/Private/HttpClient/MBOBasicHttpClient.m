@@ -108,6 +108,8 @@ typedef void (^MBOBasicClientCompletionBlock)(id data, NSDictionary *responseHea
 
 + (NSString *)addParameters:(NSDictionary *)parameters toPath:(NSString *)path
 {
+    if (!parameters) return path;
+        
     __block NSString *newPath = path;
     __block BOOL firstParameterDone = NO;
     [parameters enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *value, BOOL *stop)
@@ -188,7 +190,7 @@ typedef void (^MBOBasicClientCompletionBlock)(id data, NSDictionary *responseHea
         id jsonData = _data.length > 0 ? [NSJSONSerialization JSONObjectWithData:_data options:0 error:nil] : nil;
         dispatch_async(dispatch_get_main_queue(), ^
         {
-            if(_completionBlock) _completionBlock(jsonData, _responseHeaders, _error);
+            if(_completionBlock) _completionBlock(jsonData, _responseHeaders, _error); 
         });
     });
 }
