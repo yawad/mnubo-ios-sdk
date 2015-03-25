@@ -19,6 +19,7 @@
 #import "MBOSensorDataQueue.h"
 #import "Reachability.h"
 #import "PDKeychainBindings.h"
+#import "MBOMacros.h"
 
 
 NSString * const kMnuboClientAccessTokenKey = @"com.mnubo.sdk.client_access_token";
@@ -55,6 +56,7 @@ NSString * const kMnuboPostPublicSensorDataPath = @"/api/v2/objects/%@/sensors/%
 NSString * const kMnuboGetSensorDataPath = @"/api/v2/objects/%@/sensors/%@/samples";
 
 
+
 @interface mnubo()
 {
     id<MBOHttpClient> _httpClient;
@@ -85,6 +87,7 @@ NSString * const kMnuboGetSensorDataPath = @"/api/v2/objects/%@/sensors/%@/sampl
 @implementation mnubo
 
 static mnubo *_sharedInstance = nil;
+static BOOL loggingEnabled = NO;
 
 + (mnubo *)sharedInstanceWithClientId:(NSString *)clientId clientSecret:(NSString *)clientSecret hostname:(NSString *)hostname
 {
@@ -130,19 +133,38 @@ static mnubo *_sharedInstance = nil;
         {
             [self getClientAccessTokenCompletion:^(MBOError *error) {
                 if (!error)
-                    NSLog(@"Client access token successfully fetched during SDK initialization");
+                {
+                    MBOLog(@"Client access token successfully fetched during SDK initialization");
+                }
                 else
-                    NSLog(@"ERROR while fetching the client access token during SDK initialization");
+                {
+                    MBOLog(@"ERROR while fetching the client access token during SDK initialization");
+                }
             }];
         }
         else
         {
-            NSLog(@"Client access token found in the user defaults : %@", [_clientAccessToken substringToIndex:10]);
-            NSLog(@"It expires in %@ seconds from its generation", _clientExpiresIn);
+            MBOLog(@"Client access token found in the user defaults : %@", [_clientAccessToken substringToIndex:10]);
+            MBOLog(@"It expires in %@ seconds from its generation", _clientExpiresIn);
         }
     }
 
     return self;
+}
+
++ (void)enableLogging
+{
+    loggingEnabled = YES;
+}
+
++ (void)disableLogging
+{
+    loggingEnabled = NO;
+}
+
++ (BOOL)isLoggingEnabled
+{
+    return loggingEnabled;
 }
 
 - (void)setSensorDataRetryInterval:(NSTimeInterval)sensorDataRetryInterval
@@ -361,7 +383,7 @@ static mnubo *_sharedInstance = nil;
 {
     NSString *path = [NSString stringWithFormat:@"%@/users/%@/objects", _baseURL, username];
     
-    NSLog(@"Get user's objects with path : %@", path);
+    MBOLog(@"Get user's objects with path : %@", path);
     
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
     
@@ -438,7 +460,7 @@ static mnubo *_sharedInstance = nil;
     
     NSString *createObjectPath = [NSString stringWithFormat:@"%@%@", _baseURL, kMnuboCreateObjectPath];
     
-    NSLog(@"Create object with path : %@", createObjectPath);
+    MBOLog(@"Create object with path : %@", createObjectPath);
 
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
 
@@ -452,7 +474,7 @@ static mnubo *_sharedInstance = nil;
             {
                 if(error)
                 {
-                    NSLog(@"Get object failed in create object. Error:%@", error);
+                    MBOLog(@"Get object failed in create object. Error:%@", error);
                     if(completion) completion(nil, [MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeGetNewCreatedObjectError userInfo:nil]);
                 }
                 else
@@ -491,7 +513,7 @@ static mnubo *_sharedInstance = nil;
         NSArray *locationHeaderParts = [locationHeader componentsSeparatedByString:@"/"];
         if(locationHeaderParts.count == 0)
         {
-            NSLog(@"Invalid location header: %@", locationHeader);
+            MBOLog(@"Invalid location header: %@", locationHeader);
             if(completion) completion(nil, [MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeGetNewCreatedObjectError userInfo:nil]);
         }
 
@@ -699,7 +721,7 @@ static mnubo *_sharedInstance = nil;
     }
     
     
-    NSLog(@"Sample sent with path : %@", postSensorPath);
+    MBOLog(@"Sample sent with path : %@", postSensorPath);
 
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
 
@@ -764,7 +786,7 @@ static mnubo *_sharedInstance = nil;
   
   NSString *getSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboGetSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode], sensorName]];
   
-  NSLog(@"Sample fetched with path : %@", getSensorPath);
+  MBOLog(@"Sample fetched with path : %@", getSensorPath);
   
   NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
   NSDictionary *parameters = @{@"id_type" : byObjectId ? @"objectid" : @"deviceid",
@@ -847,7 +869,7 @@ static mnubo *_sharedInstance = nil;
 {
     NSString *getTokenPath = [NSString stringWithFormat:@"%@%@", _baseURL, kMnuboGetTokenPath];
     
-    NSLog(@"Get user access token with path : %@", getTokenPath);
+    MBOLog(@"Get user access token with path : %@", getTokenPath);
     
     NSDictionary *headers = @{ @"Content-Type": @"application/x-www-form-urlencoded"};
     NSDictionary *parameters = @{ @"grant_type": @"password", @"client_id": _clientId, @"username": username, @"password": password};
@@ -878,7 +900,7 @@ static mnubo *_sharedInstance = nil;
 {
     NSString *getTokenPath = [NSString stringWithFormat:@"%@%@", _baseURL, kMnuboGetTokenPath];
     
-    NSLog(@"Get user access token with refresh token and path : %@", getTokenPath);
+    MBOLog(@"Get user access token with refresh token and path : %@", getTokenPath);
     
     NSDictionary *headers = @{ @"Content-Type": @"application/x-www-form-urlencoded"};
     NSDictionary *parameters = @{ @"grant_type": @"refresh_token", @"client_id": _clientId, @"refresh_token": _userRefreshToken};
@@ -918,15 +940,15 @@ static mnubo *_sharedInstance = nil;
     NSTimeInterval interval = [_userTokenTimestamp timeIntervalSinceNow];
     double remainingValidity = interval + [_userExpiresIn doubleValue];
     
-    NSLog(@"Validity : %f", remainingValidity);
+    MBOLog(@"Validity : %f", remainingValidity);
     
     if (remainingValidity <= 0 && refresh)
     {
         [self getClientAccessTokenCompletion:^(MBOError *error) {
             if (!error)
-                NSLog(@"Client Access Token refreshed");
+                MBOLog(@"Client Access Token refreshed");
             else
-                NSLog(@"ERROR while refreshing the token.");
+                MBOLog(@"ERROR while refreshing the token.");
         }];
         return NO;
     }
@@ -943,15 +965,15 @@ static mnubo *_sharedInstance = nil;
         NSTimeInterval interval = [_userTokenTimestamp timeIntervalSinceNow];
         double remainingValidity = interval + [_userExpiresIn doubleValue];
         
-        NSLog(@"Validity : %f", remainingValidity);
+        MBOLog(@"Validity : %f", remainingValidity);
         
         if (remainingValidity <= 0 && refresh)
         {
             [self getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error) {
                 if (!error)
-                    NSLog(@"Refresh Token used.");
+                    MBOLog(@"Refresh Token used.");
                 else
-                    NSLog(@"ERROR while refreshing the token.");
+                    MBOLog(@"ERROR while refreshing the token.");
             }];
             return NO;
         }
@@ -976,7 +998,7 @@ static mnubo *_sharedInstance = nil;
 
 - (void)logInWithUsername:(NSString *)username password:(NSString *)password completion:(void (^)(MBOError *error))completion oauthErrorCompletion:(void (^) (MBOError *error))oauthErrorCompletion
 {
-    NSLog(@"Login called with username : %@", username);
+    MBOLog(@"Login called with username : %@", username);
     
     self.oauthErrorBlock = oauthErrorCompletion;
     
@@ -988,7 +1010,7 @@ static mnubo *_sharedInstance = nil;
 
 - (void)logOut
 {
-    NSLog(@"User logged out");
+    MBOLog(@"User logged out");
     
     _userAccessToken = nil;
     _userExpiresIn = nil;
@@ -1006,7 +1028,7 @@ static mnubo *_sharedInstance = nil;
 {
     NSString *resetPasswordPath = [NSString stringWithFormat:@"%@%@", _baseURL, [NSString stringWithFormat:kMnuboResetPasswordPath, username]];
     
-    NSLog(@"Reset password with path : %@", resetPasswordPath);
+    MBOLog(@"Reset password with path : %@", resetPasswordPath);
     
     NSDictionary *headers = @{ @"Authorization": [NSString stringWithFormat:@"Bearer %@", _clientAccessToken]};
 
@@ -1014,17 +1036,17 @@ static mnubo *_sharedInstance = nil;
     {
         if (!error)
         {
-            NSLog(@"Password has been reset successfully");
+            MBOLog(@"Password has been reset successfully");
             if (completion) completion(nil);
         }
         else if(error.code == 401 && allowRefreshClient)
         {
-            NSLog(@"Error with the authentification");
+            MBOLog(@"Error with the authentification");
             [self resetPasswordForUsername:username allowRefreshClient:NO completion:completion];
         }
         else
         {
-            NSLog(@"Error while reseting the password");
+            MBOLog(@"Error while reseting the password");
             if (completion) completion([MBOError errorWithError:error extraInfo:data]);
         }
     }];
@@ -1040,7 +1062,7 @@ static mnubo *_sharedInstance = nil;
 {
     NSString *resetPasswordPath = [NSString stringWithFormat:@"%@%@", _baseURL, [NSString stringWithFormat:kMnuboResetPasswordPath, username]];
     
-    NSLog(@"Confirm reset password with path : %@", resetPasswordPath);
+    MBOLog(@"Confirm reset password with path : %@", resetPasswordPath);
     
     NSDictionary *headers = @{ @"Authorization": [NSString stringWithFormat:@"Bearer %@", _clientAccessToken]};
     NSDictionary *data = @{ @"token": token, @"password": newPassword, @"confirmed_password": newPassword };
@@ -1049,17 +1071,17 @@ static mnubo *_sharedInstance = nil;
      {
          if (!error)
          {
-             NSLog(@"Password reset has been confirmed successfully");
+             MBOLog(@"Password reset has been confirmed successfully");
              if (completion) completion(nil);
          }
          else if(error.code == 401 && allowRefreshClient)
          {
-             NSLog(@"Error with the authentification");
+             MBOLog(@"Error with the authentification");
              [self confirmResetPasswordForUsername:username newPassword:newPassword token:token allowRefreshClient:NO completion:completion];
          }
          else
          {
-             NSLog(@"Error while confirming the reset password");
+             MBOLog(@"Error while confirming the reset password");
              if (completion) completion([MBOError errorWithError:error extraInfo:data]);
          }
      }];
@@ -1075,7 +1097,7 @@ static mnubo *_sharedInstance = nil;
 {
     NSString *confirmEmailPath = [NSString stringWithFormat:@"%@%@", _baseURL, [NSString stringWithFormat:kMnuboConfirmEmailPath, username]];
     
-    NSLog(@"Confirm email with path : %@", confirmEmailPath);
+    MBOLog(@"Confirm email with path : %@", confirmEmailPath);
     
     NSDictionary *headers = @{ @"Authorization": [NSString stringWithFormat:@"Bearer %@", _userAccessToken]};
     NSDictionary *data = @{ @"token": token, @"password": password};
@@ -1084,17 +1106,17 @@ static mnubo *_sharedInstance = nil;
      {
          if (!error)
          {
-             NSLog(@"Email has been confirmed successfully");
+             MBOLog(@"Email has been confirmed successfully");
              if (completion) completion(nil);
          }
          else if(error.code == 401)
          {
-             NSLog(@"Error with the authentification");
+             MBOLog(@"Error with the authentification");
              [self confirmEmailForUsername:username password:password token:token allowRefreshClient:YES completion:completion];
          }
          else
          {
-             NSLog(@"Error while confirming the email");
+             MBOLog(@"Error while confirming the email");
              if (completion) completion([MBOError errorWithError:error extraInfo:data]);
          }
      }];

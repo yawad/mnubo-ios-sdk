@@ -28,6 +28,9 @@
 
 + (mnubo *)sharedInstanceWithClientId:(NSString *)clientId clientSecret:(NSString *)clientSecret hostname:(NSString *)hostname;
 + (mnubo *)sharedInstance;
++ (void)enableLogging;
++ (void)disableLogging;
++ (BOOL)isLoggingEnabled;
 
 
 /// User management

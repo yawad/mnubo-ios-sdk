@@ -217,3 +217,16 @@ MBOSensorDefinition *sensorDefinition = [newlyCreatedObject getSensorDefinitionO
 }];
 
 ```
+
+### Logging
+It is possible to enable or disable the logging of the SDK at any time
+```objc
+// Enable
+[mnubo enableLogging];
+
+// Disable
+[mnubo enableLogging];
+
+// Check if the logging is enabled
+BOOL isEnabled = [mnubo isLoggingEnabled];
+```

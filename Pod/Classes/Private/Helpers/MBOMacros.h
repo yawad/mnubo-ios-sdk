@@ -14,3 +14,5 @@
 #define IsEqual(x,y) (([x isEqual:y]) || (!x && !y))
 
 #define SafeSetValueForKey(dict, k, v) if (v) dict[k] = v;
+
+#define MBOLog(string, ...) if ([mnubo isLoggingEnabled]) NSLog (string, ##__VA_ARGS__)

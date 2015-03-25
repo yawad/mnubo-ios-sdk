@@ -188,9 +188,7 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
 - (NSDictionary *)toDictionary
 {
     NSMutableDictionary *_dictionary = [[NSMutableDictionary alloc] init];
-    
-#warning Update Data Structure
-    //[_dictionary setObject:_activate ? @"yes" : @"no" forKey:kMBOObjectActivateKey];
+
     
     if (_location.longitude && _location.latitude)
     {
@@ -217,8 +215,7 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
     {
         [attributeDictionaries addObject:[attribute toDictionary]];
     }];
-  
-    #warning Update Data Structure
+
     if (attributeDictionaries.count > 0)
     {
         [_dictionary setObject:attributeDictionaries forKey:@"attributes"];
