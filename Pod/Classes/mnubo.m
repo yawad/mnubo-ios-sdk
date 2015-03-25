@@ -981,6 +981,7 @@ static mnubo *_sharedInstance = nil;
     self.oauthErrorBlock = oauthErrorCompletion;
     
     [self getUserAccessTokenWithUsername:username password:password completion:^(MBOError *error) {
+        
        if(completion) completion(error);
     }];
 }
@@ -996,7 +997,12 @@ static mnubo *_sharedInstance = nil;
     [self saveTokens];
 }
 
-- (void)resetPasswordForUsername:(NSString *)username
+- (void)resetPasswordForUsername:(NSString *)username completion:(void (^)(MBOError *error))completion
+{
+    [self resetPasswordForUsername:username allowRefreshClient:YES completion:completion];
+}
+
+- (void)resetPasswordForUsername:(NSString *)username allowRefreshClient:(BOOL)allowRefreshClient completion:(void (^)(MBOError *error))completion
 {
     NSString *resetPasswordPath = [NSString stringWithFormat:@"%@%@", _baseURL, [NSString stringWithFormat:kMnuboResetPasswordPath, username]];
     
@@ -1009,20 +1015,28 @@ static mnubo *_sharedInstance = nil;
         if (!error)
         {
             NSLog(@"Password has been reset successfully");
+            if (completion) completion(nil);
         }
-        else if(error.code == 401)
+        else if(error.code == 401 && allowRefreshClient)
         {
             NSLog(@"Error with the authentification");
+            [self resetPasswordForUsername:username allowRefreshClient:NO completion:completion];
         }
         else
         {
             NSLog(@"Error while reseting the password");
+            if (completion) completion([MBOError errorWithError:error extraInfo:data]);
         }
     }];
     
 }
 
-- (void)confirmResetPasswordForUsername:(NSString *)username newPassword:(NSString *)newPassword token:(NSString *)token
+- (void)confirmResetPasswordForUsername:(NSString *)username newPassword:(NSString *)newPassword token:(NSString *)token completion:(void (^)(MBOError *error))completion
+{
+    [self confirmResetPasswordForUsername:username newPassword:newPassword token:token allowRefreshClient:YES completion:completion];
+}
+
+- (void)confirmResetPasswordForUsername:(NSString *)username newPassword:(NSString *)newPassword token:(NSString *)token allowRefreshClient:(BOOL)allowRefreshClient completion:(void (^)(MBOError *error))completion
 {
     NSString *resetPasswordPath = [NSString stringWithFormat:@"%@%@", _baseURL, [NSString stringWithFormat:kMnuboResetPasswordPath, username]];
     
@@ -1036,21 +1050,28 @@ static mnubo *_sharedInstance = nil;
          if (!error)
          {
              NSLog(@"Password reset has been confirmed successfully");
+             if (completion) completion(nil);
          }
-         else if(error.code == 401)
+         else if(error.code == 401 && allowRefreshClient)
          {
              NSLog(@"Error with the authentification");
+             [self confirmResetPasswordForUsername:username newPassword:newPassword token:token allowRefreshClient:NO completion:completion];
          }
          else
          {
              NSLog(@"Error while confirming the reset password");
+             if (completion) completion([MBOError errorWithError:error extraInfo:data]);
          }
      }];
     
 }
 
+- (void)confirmEmailForUsername:(NSString *)username password:(NSString *)password token:(NSString *)token completion:(void (^) (MBOError *error))completion
+{
+    [self confirmEmailForUsername:username password:password token:token allowRefreshClient:YES completion:completion];
+}
 
-- (void)confirmEmailForUsername:(NSString *)username password:(NSString *)password token:(NSString *)token
+- (void)confirmEmailForUsername:(NSString *)username password:(NSString *)password token:(NSString *)token allowRefreshClient:(BOOL)allowRefreshClient completion:(void (^) (MBOError *error))completion
 {
     NSString *confirmEmailPath = [NSString stringWithFormat:@"%@%@", _baseURL, [NSString stringWithFormat:kMnuboConfirmEmailPath, username]];
     
@@ -1064,14 +1085,17 @@ static mnubo *_sharedInstance = nil;
          if (!error)
          {
              NSLog(@"Email has been confirmed successfully");
+             if (completion) completion(nil);
          }
          else if(error.code == 401)
          {
              NSLog(@"Error with the authentification");
+             [self confirmEmailForUsername:username password:password token:token allowRefreshClient:YES completion:completion];
          }
          else
          {
              NSLog(@"Error while confirming the email");
+             if (completion) completion([MBOError errorWithError:error extraInfo:data]);
          }
      }];
     

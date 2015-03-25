@@ -17,8 +17,19 @@
     {
         if([extraInfo isKindOfClass:[NSDictionary class]])
         {
-            _mnuboErrorCode = [[extraInfo objectForKey:@"errorCode"] integerValue];
+            
             _mnuboErrorMessage = [extraInfo objectForKey:@"message"];
+            _mnuboErrorDescription = [extraInfo objectForKey:@"error_description"];
+            
+            
+            if ([_mnuboErrorDescription isEqualToString:@"Bad credentials"])
+            {
+                _mnuboErrorCode = MBOErrorCodeBadCredentials;
+            }
+            else
+            {
+                _mnuboErrorCode = [[extraInfo objectForKey:@"errorCode"] integerValue];
+            }
         }
     }
 
@@ -27,6 +38,7 @@
 
 + (MBOError *)errorWithError:(NSError *)error extraInfo:(id)extraInfoData
 {
+
     return [[MBOError alloc] initWithError:error extraInfo:extraInfoData];
 }
 

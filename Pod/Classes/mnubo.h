@@ -15,13 +15,7 @@
 #import "MBOAttribute.h"
 #import "MBOSample.h"
 
-typedef NS_ENUM(NSUInteger, MBOErrorCode)
-{
-    MBOErrorCodeInvalidDataReceived = 1000,
-    MBOErrorCodeInvalidParameter,
-    MBOErrorCodeGetNewCreatedObjectError,
-    MBOErrorCodeWillBeRetryLaterAutomatically
-};
+
 
 @interface mnubo : NSObject
 
@@ -80,10 +74,10 @@ typedef NS_ENUM(NSUInteger, MBOErrorCode)
 
 - (void)logOut;
 
-- (void)resetPasswordForUsername:(NSString *)username;
+- (void)resetPasswordForUsername:(NSString *)username completion:(void (^)(MBOError *error))completion;
 
-- (void)confirmResetPasswordForUsername:(NSString *)username newPassword:(NSString *)newPassword token:(NSString *)token;
+- (void)confirmResetPasswordForUsername:(NSString *)username newPassword:(NSString *)newPassword token:(NSString *)token completion:(void (^)(MBOError *error))completion;
 
-- (void)confirmEmailForUsername:(NSString *)username password:(NSString *)password token:(NSString *)token;
+- (void)confirmEmailForUsername:(NSString *)username password:(NSString *)password token:(NSString *)token completion:(void (^) (MBOError *error))completion;
 
 @end

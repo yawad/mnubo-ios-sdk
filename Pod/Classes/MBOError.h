@@ -10,6 +10,17 @@
 
 @interface MBOError : NSError
 
+
+typedef NS_ENUM(NSUInteger, MBOErrorCode)
+{
+    MBOErrorCodeInvalidDataReceived = 1000,
+    MBOErrorCodeInvalidParameter,
+    MBOErrorCodeGetNewCreatedObjectError,
+    MBOErrorCodeWillBeRetryLaterAutomatically,
+    MBOErrorCodeBadCredentials = 1001
+};
+
+@property(nonatomic, readonly) NSString *mnuboErrorDescription;
 @property(nonatomic, readonly) NSString *mnuboErrorMessage;
 @property(nonatomic, readonly) NSInteger mnuboErrorCode;
 
