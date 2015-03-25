@@ -25,6 +25,8 @@ The primary class of the SDK has to be initialize with your mnubo account inform
 * `SDK Management`
   - `sharedInstanceWithClientId:clientSecret:hostname:`
   - `sharedInstance`
+  - `enableLogging`/`disableLogging`
+  - `isLoggingEnabled`
 * `User Management`
   - `createUser:updateIfAlreadyExist:completion:`
   - `updateUser:completion:`
@@ -34,6 +36,7 @@ The primary class of the SDK has to be initialize with your mnubo account inform
   - `changePasswordForUsername:oldPassword:newPassword:completion:`
   - `resetPasswordForUsername:`
   - `confirmResetPasswordForUsername:newPassword:token:`
+  - `confirmEmailForUsername:password:token:completion:`
 * `Object Management`
   - `createObject:updateIfAlreadyExist:completion:`
   - `updateObject:completion:`
@@ -42,13 +45,13 @@ The primary class of the SDK has to be initialize with your mnubo account inform
   - `deleteObjectWithObjectId:completion:`
   - `deleteObjectWithDeviceId:completion:`
 * `Send Sensor Data`
-  - `sendSensorData:forObjectId:completion:`
-  - `sendSensorData:commonData:forObjectId:completion:`
-  - `sendSensorData:forDeviceId:completion:`
-  - `sendSensorData:commonData:forDeviceId:completion:`
+  - `sendSample:toPublicSensorName:withObjectId:completion:`
+  - `sendSample:toPublicSensorName:withDeviceId:completion:`
+  - `sendSample:forObjectId:completion:`
+  - `sendSample:forDeviceId:completion:`
 * `Fetch Sensor Data`
-  - `fetchLastSensorDataOfObjectId:sensorDefinition:completion:`
-  - `fetchLastSensorDataOfDeviceId:sensorDefinition:completion:`
+  - `fetchLastSampleOfObjectId:sensorName:completion:`
+  - `fetchLastSampleOfDeviceId:sensorName:completion:`
   - `fetchSensorDatasOfObjectId:sensorDefinition:fromStartDate:toEndDate:completion:`
   - `fetchSensorDatasOfDeviceId:sensorDefinition:fromStartDate:toEndDate:completion:`
   - `fetchSensorDataCountOfObjectId:sensorDefinition:fromStartDate:toEndDate:completion:`
@@ -99,7 +102,11 @@ After the user is created in the mnubo platforme, an email is automatically sent
 
 ```objc
 // Confirm the email of the user
-[[mnubo sharedInstance] confirmEmailForUsername:@"USERNAME" password:@"USER_PASSWORD" token:@"EMAILED_TOKEN"];
+[[mnubo sharedInstance] confirmEmailForUsername:@"USERNAME" password:@"USER_PASSWORD" token:@"EMAILED_TOKEN" completion:^(MBOError *error) {
+  if (!error) {
+    // Everything went fine
+  }
+}];
 ```
 
 ### Log In an user
@@ -150,13 +157,21 @@ When a user request a password reset, 2 steps are required to complet the proces
 #### 1st Step
 ```objc
 // Request an email with a token to reset the password
-[[mnubo sharedInstance] resetPasswordForUsername:@"USERNAME"];
+[[mnubo sharedInstance] resetPasswordForUsername:@"USERNAME" completion:^(MBOError *error) {
+  if (!error) {
+    // Everything went fine
+  }
+}];
 ```
 #### 2nd Step
 Once the user recieve the token by email
 ```objc
 // Enter the token recieved by email
-[[mnubo sharedInstance] confirmResetPasswordForUsername:@"USERNAME" newPassword:@"NEW_PASSWORD" token:@"TOKEN_FROM_EMAIL"];
+[[mnubo sharedInstance] confirmResetPasswordForUsername:@"USERNAME" newPassword:@"NEW_PASSWORD" token:@"TOKEN_FROM_EMAIL" completion:^(MBOError *error) {
+  if (!error) {
+    // Everything went fine
+  }
+}];
 ```
 
 ### Create an object
@@ -225,7 +240,7 @@ It is possible to enable or disable the logging of the SDK at any time
 [mnubo enableLogging];
 
 // Disable
-[mnubo enableLogging];
+[mnubo disableLogging];
 
 // Check if the logging is enabled
 BOOL isEnabled = [mnubo isLoggingEnabled];

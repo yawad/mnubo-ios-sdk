@@ -780,7 +780,18 @@ static BOOL loggingEnabled = NO;
     }
 }
 
-- (void)fetchLastSampleObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOSample *sample, MBOError *error))completion
+- (void)fetchLastSampleOfObjectId:(NSString *)objectId sensorName:(NSString *)sensorName completion:(void (^)(MBOSample *sample, MBOError *error))completion
+{
+    [self fetchLastSampleOfObjectId:objectId orDeviceId:nil sensorName:sensorName allowRefreshToken:YES completion:completion];
+}
+
+- (void)fetchLastSampleOfDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName completion:(void (^)(MBOSample *sample, MBOError *error))completion
+{
+    [self fetchLastSampleOfObjectId:nil orDeviceId:deviceId sensorName:sensorName allowRefreshToken:YES completion:completion];
+}
+
+
+- (void)fetchLastSampleOfObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOSample *sample, MBOError *error))completion
 {
   BOOL byObjectId = objectId.length > 0;
   
@@ -821,7 +832,7 @@ static BOOL loggingEnabled = NO;
         {
           if(!error)
           {
-            [weakSelf fetchLastSampleObjectId:objectId orDeviceId:deviceId sensorName:sensorName allowRefreshToken:NO completion:completion];
+            [weakSelf fetchLastSampleOfObjectId:objectId orDeviceId:deviceId sensorName:sensorName allowRefreshToken:NO completion:completion];
           }
           else
           {
@@ -946,9 +957,13 @@ static BOOL loggingEnabled = NO;
     {
         [self getClientAccessTokenCompletion:^(MBOError *error) {
             if (!error)
+            {
                 MBOLog(@"Client Access Token refreshed");
+            }
             else
+            {
                 MBOLog(@"ERROR while refreshing the token.");
+            }
         }];
         return NO;
     }
@@ -971,9 +986,13 @@ static BOOL loggingEnabled = NO;
         {
             [self getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error) {
                 if (!error)
+                {
                     MBOLog(@"Refresh Token used.");
+                }
                 else
+                {
                     MBOLog(@"ERROR while refreshing the token.");
+                }
             }];
             return NO;
         }
