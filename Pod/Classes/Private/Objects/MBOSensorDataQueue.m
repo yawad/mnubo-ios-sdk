@@ -163,7 +163,15 @@
     if(encodedJobData)
     {
         NSDictionary *jobData = [NSKeyedUnarchiver unarchiveObjectWithData:encodedJobData];
-        [_mnuboSDK sendSample:[jobData objectForKey:@"sample"] withSensorName:@"" withObjectId:[jobData stringForKey:@"objectid"] orDeviceId:[jobData stringForKey:@"deviceId"] publicSensor:NO allowRefreshToken:YES completion:nil];
+        if([jobData stringForKey:@"deviceId"].length > 0)
+        {
+
+            [_mnuboSDK sendSample:[jobData objectForKey:@"sample"] forDeviceId:[jobData stringForKey:@"deviceId"] completion:nil];
+        }
+        else
+        {
+            [_mnuboSDK sendSample:[jobData objectForKey:@"sample"] forObjectId:[jobData stringForKey:@"objectId"] completion:nil];
+        }
     }
 
     // The _mnuboSDK sendSensorData will put back a instance of that new job in the "sending queue", so we can delete this one right away
