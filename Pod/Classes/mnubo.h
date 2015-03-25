@@ -63,6 +63,12 @@ typedef NS_ENUM(NSUInteger, MBOErrorCode)
 
 /// Sensor data
 
+- (void)sendSample:(MBOSample *)sample toPublicSensorName:(NSString *)sensorName withObjectId:(NSString *)objectId completion:(void (^) (MBOError *error))completion;
+- (void)sendSample:(MBOSample *)sample toPublicSensorName:(NSString *)sensorName withDeviceId:(NSString *)deviceId completion:(void (^) (MBOError *error))completion;
+
+- (void)sendSample:(MBOSample *)sample forObjectId:(NSString *)objectId completion:(void (^) (MBOError *error))completion;
+- (void)sendSample:(MBOSample *)sample forDeviceId:(NSString *)deviceId completion:(void (^) (MBOError *error))completion;
+
 - (void)sendSample:(MBOSample *)sample withSensorName:(NSString *)sensorName withObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId publicSensor:(BOOL)publicSensor allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOError *error))completion;
 
 - (void)fetchLastSampleObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOSample *sample, MBOError *error))completion;

@@ -238,7 +238,7 @@ static mnubo *_sharedInstance = nil;
     }
 
     NSString *getUsernamePath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboUpdateUserPath, [user.username urlEncode]]];
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _clientAccessToken] };
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
 
     __weak mnubo *weakSelf = self;
     [_httpClient PUT:getUsernamePath headers:headers parameters:nil data:[user toDictionary] completion:^(id data, NSError *error)
@@ -276,7 +276,7 @@ static mnubo *_sharedInstance = nil;
 - (void)getUserWithUsername:(NSString *)username allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOUser *user, MBOError *error))completion
 {
     NSString *getUsernamePath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboGetUserPath, [username urlEncode]]];
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _clientAccessToken] };
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
     
     __weak mnubo *weakSelf = self;
     [_httpClient GET:getUsernamePath headers:headers parameters:nil completion:^(id data, NSError *error)
@@ -321,7 +321,7 @@ static mnubo *_sharedInstance = nil;
 - (void)deleteUserWithUsername:(NSString *)username allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOError *error))completion
 {
     NSString *deleteUserPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboDeleteUserPath, [username urlEncode]]];
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _clientAccessToken] };
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
 
     __weak mnubo *weakSelf = self;
     [_httpClient DELETE:deleteUserPath headers:headers parameters:nil completion:^(id data, NSError *error)
@@ -351,14 +351,21 @@ static mnubo *_sharedInstance = nil;
     }];
 }
 
+- (void)getObjectsOfUsername:(NSString *)username completion:(void (^) (NSArray *objects, NSError *error))completion
+{
+    [self getObjectsOfUsername:username allowRefreshToken:YES completion:completion];
+}
 
-- (void)getObjectsOfUsername:(NSString *)username completion:(void (^) (NSArray *objects, NSError *error))completion {
+
+- (void)getObjectsOfUsername:(NSString *)username allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^) (NSArray *objects, NSError *error))completion
+{
     NSString *path = [NSString stringWithFormat:@"%@/users/%@/objects", _baseURL, username];
     
     NSLog(@"Get user's objects with path : %@", path);
     
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
     
+    __weak mnubo *weakSelf = self;
     [_httpClient GET:path headers:headers parameters:nil completion:^(id data, NSError *error) {
         if (!error)
         {
@@ -375,9 +382,23 @@ static mnubo *_sharedInstance = nil;
                 
             }
         }
+        else if(error.code == 401 && allowRefreshToken)
+        {
+            [weakSelf getClientAccessTokenCompletion:^(MBOError *error)
+             {
+                 if(!error)
+                 {
+                     [weakSelf getObjectsOfUsername:username allowRefreshToken:NO completion:completion];
+                 }
+                 else
+                 {
+                     if(completion) completion(nil, error);
+                 }
+             }];
+        }
         else
         {
-            if (completion) completion(nil, error);
+            if (completion) completion(nil, [MBOError errorWithError:error extraInfo:data]);
         }
     }];
 }
@@ -385,7 +406,7 @@ static mnubo *_sharedInstance = nil;
 - (void)changePasswordForUsername:(NSString *)username oldPassword:(NSString *)oldPassword newPassword:(NSString *)newPassword completion:(void (^) (NSError *error))completion
 {
     NSString *path = [NSString stringWithFormat:@"%@/users/%@/password", _baseURL, username];
-    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _clientAccessToken] };
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
     
     NSDictionary *bodyData = @{@"password": newPassword, @"confirmed_password": newPassword, @"previous_password": oldPassword};
     
@@ -466,7 +487,7 @@ static mnubo *_sharedInstance = nil;
 {
     if(deviceId.length == 0)
     {
-        // No device id, we need to the the objectID from the location header // Location	https://sandbox.api.mnubo.com:4443//rest/objects/5c81fe00-064c-4876-bfce-907b4d10a193
+        // No device id, we need to the the objectID from the location header
         NSArray *locationHeaderParts = [locationHeader componentsSeparatedByString:@"/"];
         if(locationHeaderParts.count == 0)
         {
@@ -643,6 +664,25 @@ static mnubo *_sharedInstance = nil;
 #pragma mark Sensor data
 //------------------------------------------------------------------------------
 
+- (void)sendSample:(MBOSample *)sample toPublicSensorName:(NSString *)sensorName withObjectId:(NSString *)objectId completion:(void (^) (MBOError *error))completion
+{
+    [self sendSample:sample withSensorName:sensorName withObjectId:objectId orDeviceId:nil publicSensor:YES allowRefreshToken:YES completion:completion];
+}
+
+- (void)sendSample:(MBOSample *)sample toPublicSensorName:(NSString *)sensorName withDeviceId:(NSString *)deviceId completion:(void (^) (MBOError *error))completion
+{
+    [self sendSample:sample withSensorName:sensorName withObjectId:nil orDeviceId:deviceId publicSensor:YES allowRefreshToken:YES completion:completion];
+}
+
+- (void)sendSample:(MBOSample *)sample forObjectId:(NSString *)objectId completion:(void (^) (MBOError *error))completion
+{
+    [self sendSample:sample withSensorName:nil withObjectId:objectId orDeviceId:nil publicSensor:NO allowRefreshToken:YES completion:completion];
+}
+
+- (void)sendSample:(MBOSample *)sample forDeviceId:(NSString *)deviceId completion:(void (^) (MBOError *error))completion
+{
+    [self sendSample:sample withSensorName:nil withObjectId:nil orDeviceId:deviceId publicSensor:NO allowRefreshToken:YES completion:completion];
+}
 
 - (void)sendSample:(MBOSample *)sample withSensorName:(NSString *)sensorName withObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId publicSensor:(BOOL)publicSensor allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOError *error))completion
 {
@@ -744,7 +784,6 @@ static mnubo *_sharedInstance = nil;
          if(samples.count > 0 && [samples[0] isKindOfClass:[NSDictionary class]])
          {
              invalidData = NO;
-             NSLog(@"%@", ((NSDictionary *)samples[0]).description);
              if(completion) completion([[MBOSample alloc] initWithDictionary:samples[0]], nil);
          }
        }
