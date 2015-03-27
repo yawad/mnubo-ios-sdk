@@ -381,14 +381,15 @@ static BOOL loggingEnabled = NO;
 
 - (void)getObjectsOfUsername:(NSString *)username allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^) (NSArray *objects, NSError *error))completion
 {
-    NSString *path = [NSString stringWithFormat:@"%@/users/%@/objects", _baseURL, username];
+
+    NSString *getObjectsOfUserPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:@"/api/v2/users/%@/objects", [username urlEncode]]];
     
-    MBOLog(@"Get user's objects with path : %@", path);
+    MBOLog(@"Get user's objects with path : %@", getObjectsOfUserPath);
     
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
     
     __weak mnubo *weakSelf = self;
-    [_httpClient GET:path headers:headers parameters:nil completion:^(id data, NSError *error) {
+    [_httpClient GET:getObjectsOfUserPath headers:headers parameters:nil completion:^(id data, NSError *error) {
         if (!error)
         {
             if ([data isKindOfClass:[NSDictionary class]])
@@ -425,15 +426,15 @@ static BOOL loggingEnabled = NO;
     }];
 }
 
-- (void)changePasswordForUsername:(NSString *)username oldPassword:(NSString *)oldPassword newPassword:(NSString *)newPassword completion:(void (^) (NSError *error))completion
+- (void)changePasswordForUsername:(NSString *)username previousPassword:(NSString *)previousPassword newPassword:(NSString *)newPassword completion:(void (^) (MBOError *error))completion
 {
-    NSString *path = [NSString stringWithFormat:@"%@/users/%@/password", _baseURL, username];
+    NSString *changePasswordPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:@"/api/v2/users/%@/password", [username urlEncode]]];
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
     
-    NSDictionary *bodyData = @{@"password": newPassword, @"confirmed_password": newPassword, @"previous_password": oldPassword};
+    NSDictionary *bodyData = @{@"password": newPassword, @"confirmed_password": newPassword, @"previous_password": previousPassword};
     
     
-    [_httpClient PUT:path headers:headers parameters:nil data:bodyData completion:^(id data, NSError *error)
+    [_httpClient PUT:changePasswordPath headers:headers parameters:nil data:bodyData completion:^(id data, NSError *error)
      {
          if(!error)
          {
@@ -441,7 +442,7 @@ static BOOL loggingEnabled = NO;
          }
          else
          {
-             if(completion) completion(error);
+             if(completion) completion([MBOError errorWithError:error extraInfo:data]);
          }
      }];
 }
@@ -895,7 +896,6 @@ static BOOL loggingEnabled = NO;
              _userExpiresIn = [jsonData objectForKey:@"expires_in"];
              _userTokenTimestamp = [NSDate date];
              
-             
              [self saveTokens];
              if(completion) completion(nil);
          }
@@ -1009,7 +1009,7 @@ static BOOL loggingEnabled = NO;
 
 - (BOOL)isUserConnected
 {
-    if (_userAccessToken)
+    if (_userAccessToken != nil && ![_userAccessToken isEqualToString:@""])
         return YES;
     else
         return NO;
@@ -1031,10 +1031,10 @@ static BOOL loggingEnabled = NO;
 {
     MBOLog(@"User logged out");
     
-    _userAccessToken = nil;
+    _userAccessToken = @"";
     _userExpiresIn = nil;
     _userTokenTimestamp = nil;
-    _userRefreshToken = nil;
+    _userRefreshToken = @"";
     [self saveTokens];
 }
 
@@ -1045,7 +1045,7 @@ static BOOL loggingEnabled = NO;
 
 - (void)resetPasswordForUsername:(NSString *)username allowRefreshClient:(BOOL)allowRefreshClient completion:(void (^)(MBOError *error))completion
 {
-    NSString *resetPasswordPath = [NSString stringWithFormat:@"%@%@", _baseURL, [NSString stringWithFormat:kMnuboResetPasswordPath, username]];
+    NSString *resetPasswordPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboResetPasswordPath, [username urlEncode]]];
     
     MBOLog(@"Reset password with path : %@", resetPasswordPath);
     
@@ -1079,7 +1079,7 @@ static BOOL loggingEnabled = NO;
 
 - (void)confirmResetPasswordForUsername:(NSString *)username newPassword:(NSString *)newPassword token:(NSString *)token allowRefreshClient:(BOOL)allowRefreshClient completion:(void (^)(MBOError *error))completion
 {
-    NSString *resetPasswordPath = [NSString stringWithFormat:@"%@%@", _baseURL, [NSString stringWithFormat:kMnuboResetPasswordPath, username]];
+    NSString *resetPasswordPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboResetPasswordPath, [username urlEncode]]];
     
     MBOLog(@"Confirm reset password with path : %@", resetPasswordPath);
     
@@ -1114,7 +1114,8 @@ static BOOL loggingEnabled = NO;
 
 - (void)confirmEmailForUsername:(NSString *)username password:(NSString *)password token:(NSString *)token allowRefreshClient:(BOOL)allowRefreshClient completion:(void (^) (MBOError *error))completion
 {
-    NSString *confirmEmailPath = [NSString stringWithFormat:@"%@%@", _baseURL, [NSString stringWithFormat:kMnuboConfirmEmailPath, username]];
+
+    NSString *confirmEmailPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboConfirmEmailPath, [username urlEncode]]];
     
     MBOLog(@"Confirm email with path : %@", confirmEmailPath);
     

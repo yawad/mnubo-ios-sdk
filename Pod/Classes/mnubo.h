@@ -44,7 +44,7 @@
 
 - (void)getObjectsOfUsername:(NSString *)username completion:(void (^) (NSArray *objects, NSError *error))completion;
 
-- (void)changePasswordForUsername:(NSString *)username oldPassword:(NSString *)oldPassword newPassword:(NSString *)newPassword completion:(void (^) (NSError *error))completion;
+- (void)changePasswordForUsername:(NSString *)username previousPassword:(NSString *)previousPassword newPassword:(NSString *)newPassword completion:(void (^) (MBOError *error))completion;
 
 /// Object management
 - (void)createObject:(MBOObject *)object updateIfAlreadyExist:(BOOL)updateIfAlreadyExist completion:(void (^)(MBOObject *newlyCreatedObject, MBOError *error))completion;

@@ -26,6 +26,10 @@
             {
                 _mnuboErrorCode = MBOErrorCodeBadCredentials;
             }
+            else if ([_mnuboErrorMessage rangeOfString:@"User "].location != NSNotFound && [_mnuboErrorMessage rangeOfString:@" already exists."].location != NSNotFound)
+            {
+                _mnuboErrorCode = MBOErrorCodeUserAlreadyExists;
+            }
             else
             {
                 _mnuboErrorCode = [[extraInfo objectForKey:@"errorCode"] integerValue];
