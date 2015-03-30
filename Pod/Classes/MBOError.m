@@ -17,22 +17,15 @@
     {
         if([extraInfo isKindOfClass:[NSDictionary class]])
         {
+            _mnuboErrorCode = [[extraInfo objectForKey:@"errorCode"] integerValue];
             
-            _mnuboErrorMessage = [extraInfo objectForKey:@"message"];
-            _mnuboErrorDescription = [extraInfo objectForKey:@"error_description"];
-            
-            
-            if ([_mnuboErrorDescription isEqualToString:@"Bad credentials"])
+            if ([extraInfo objectForKey:@"message"])
             {
-                _mnuboErrorCode = MBOErrorCodeBadCredentials;
-            }
-            else if ([_mnuboErrorMessage rangeOfString:@"User "].location != NSNotFound && [_mnuboErrorMessage rangeOfString:@" already exists."].location != NSNotFound)
-            {
-                _mnuboErrorCode = MBOErrorCodeUserAlreadyExists;
+                _mnuboErrorMessage = [extraInfo objectForKey:@"message"];
             }
             else
             {
-                _mnuboErrorCode = [[extraInfo objectForKey:@"errorCode"] integerValue];
+                _mnuboErrorMessage = [extraInfo objectForKey:@"error_description"];
             }
         }
     }

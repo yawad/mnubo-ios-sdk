@@ -21,6 +21,7 @@
 #import "PDKeychainBindings.h"
 #import "MBOMacros.h"
 
+NSString * const kMBOErrorBadCredentialsMessage = @"Bad credentials";
 
 NSString * const kMnuboClientAccessTokenKey = @"com.mnubo.sdk.client_access_token";
 NSString * const kMnuboClientExpiresInKey = @"com.mnubo.sdk.client_expires_in";
@@ -1031,10 +1032,10 @@ static BOOL loggingEnabled = NO;
 {
     MBOLog(@"User logged out");
     
-    _userAccessToken = @"";
+    _userAccessToken = nil;
     _userExpiresIn = nil;
     _userTokenTimestamp = nil;
-    _userRefreshToken = @"";
+    _userRefreshToken = nil;
     [self saveTokens];
 }
 

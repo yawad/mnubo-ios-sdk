@@ -16,6 +16,7 @@
 #import "MBOSample.h"
 
 
+extern NSString * const kMBOErrorBadCredentialsMessage;
 
 @interface mnubo : NSObject
 
