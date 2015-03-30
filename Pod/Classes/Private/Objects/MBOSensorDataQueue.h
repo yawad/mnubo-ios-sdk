@@ -18,9 +18,7 @@
 
 - (void)setRetryInterval:(NSTimeInterval)retryInterval;
 
-- (void)addSensorData:(NSArray *)sensorDatas commonData:(MBOCommonSensorData *)commonData objectId:(NSString *)objectId deviceId:(NSString *)deviceId completion:(void (^)(NSString *queueIdentifiyer))completion;
-
-- (void)addSample:(MBOSample *)sample objectId:(NSString *)objectId deviceId:(NSString *)deviceId completion:(void (^)(NSString *queueIdentifiyer))completion;
+- (void)addSample:(MBOSample *)sample objectId:(NSString *)objectId deviceId:(NSString *)deviceId publicSensorName:(NSString *)publicSensorName completion:(void (^)(NSString *queueIdentifiyer))completion;
 
 - (void)removeSensorDataWithIdentifier:(NSString *)queueIdentifiyer;
 

@@ -690,30 +690,30 @@ static BOOL loggingEnabled = NO;
 
 - (void)sendSample:(MBOSample *)sample toPublicSensorName:(NSString *)sensorName withObjectId:(NSString *)objectId completion:(void (^) (MBOError *error))completion
 {
-    [self sendSample:sample withSensorName:sensorName withObjectId:objectId orDeviceId:nil publicSensor:YES allowRefreshToken:YES completion:completion];
+    [self sendSample:sample withSensorName:sensorName withObjectId:objectId orDeviceId:nil allowRefreshToken:YES completion:completion];
 }
 
 - (void)sendSample:(MBOSample *)sample toPublicSensorName:(NSString *)sensorName withDeviceId:(NSString *)deviceId completion:(void (^) (MBOError *error))completion
 {
-    [self sendSample:sample withSensorName:sensorName withObjectId:nil orDeviceId:deviceId publicSensor:YES allowRefreshToken:YES completion:completion];
+    [self sendSample:sample withSensorName:sensorName withObjectId:nil orDeviceId:deviceId allowRefreshToken:YES completion:completion];
 }
 
 - (void)sendSample:(MBOSample *)sample forObjectId:(NSString *)objectId completion:(void (^) (MBOError *error))completion
 {
-    [self sendSample:sample withSensorName:nil withObjectId:objectId orDeviceId:nil publicSensor:NO allowRefreshToken:YES completion:completion];
+    [self sendSample:sample withSensorName:nil withObjectId:objectId orDeviceId:nil allowRefreshToken:YES completion:completion];
 }
 
 - (void)sendSample:(MBOSample *)sample forDeviceId:(NSString *)deviceId completion:(void (^) (MBOError *error))completion
 {
-    [self sendSample:sample withSensorName:nil withObjectId:nil orDeviceId:deviceId publicSensor:NO allowRefreshToken:YES completion:completion];
+    [self sendSample:sample withSensorName:nil withObjectId:nil orDeviceId:deviceId allowRefreshToken:YES completion:completion];
 }
 
-- (void)sendSample:(MBOSample *)sample withSensorName:(NSString *)sensorName withObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId publicSensor:(BOOL)publicSensor allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOError *error))completion
+- (void)sendSample:(MBOSample *)sample withSensorName:(NSString *)sensorName withObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOError *error))completion
 {
     BOOL byObjectId = objectId.length > 0;
     
     NSString *postSensorPath;
-    if (publicSensor)
+    if (sensorName)
     {
         postSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboPostPublicSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode], sensorName]];
     }
@@ -737,7 +737,7 @@ static BOOL loggingEnabled = NO;
     __weak mnubo *weakSelf = self;
     __weak id<MBOHttpClient> weakHttpClient = _httpClient;
     __weak MBOSensorDataQueue *weakSensorDataQueue = _sensorDataQueue;
-    [_sensorDataQueue addSample:sample objectId:objectId deviceId:deviceId completion:^(NSString *queueIdentifiyer)
+    [_sensorDataQueue addSample:sample objectId:objectId deviceId:deviceId publicSensorName:sensorName completion:^(NSString *queueIdentifiyer)
      {
      [weakHttpClient POST:postSensorPath headers:headers parameters:parameters data:data completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
       {
@@ -753,7 +753,7 @@ static BOOL loggingEnabled = NO;
                    [weakSensorDataQueue removeSensorDataWithIdentifier:queueIdentifiyer];
                    if(!error)
                    {
-                       [weakSelf sendSample:sample withSensorName:sensorName withObjectId:objectId orDeviceId:deviceId  publicSensor:publicSensor allowRefreshToken:NO completion:completion];
+                       [weakSelf sendSample:sample withSensorName:sensorName withObjectId:objectId orDeviceId:deviceId allowRefreshToken:NO completion:completion];
                    }
                    else
                    {

@@ -57,44 +57,15 @@
     _retryTimer = [NSTimer scheduledTimerWithTimeInterval:_retryInterval target:self selector:@selector(retryJobs) userInfo:nil repeats:YES];
 }
 
-- (void)addSensorData:(NSArray *)sensorDatas commonData:(MBOCommonSensorData *)commonData objectId:(NSString *)objectId deviceId:(NSString *)deviceId completion:(void (^)(NSString *queueIdentifiyer))completion
-{
-    [_diskAccessQueue addOperationWithBlock:^
-    {
-        NSMutableDictionary *objectData = [NSMutableDictionary dictionary];
-        if(sensorDatas.count > 0)
-        {
-            objectData[@"sensorDatas"] = sensorDatas;
-        }
-
-        if(commonData)
-        {
-            objectData[@"commonData"] = commonData;
-        }
-
-        if(objectId.length > 0)
-        {
-            objectData[@"objectId"] = objectId;
-        }
-
-        if(deviceId.length > 0)
-        {
-            objectData[@"deviceId"] = deviceId;
-        }
-
-        NSData *encodedData = [NSKeyedArchiver archivedDataWithRootObject:objectData];
-        NSString *queueIdentifier = [[NSUUID UUID] UUIDString];
-        [MBOSensorDataQueue saveData:encodedData forFileIdentifier:queueIdentifier inSendingPath:YES];
-        
-        if(completion) completion(queueIdentifier);
-    }];
-}
-
-- (void)addSample:(MBOSample *)sample objectId:(NSString *)objectId deviceId:(NSString *)deviceId completion:(void (^)(NSString *queueIdentifiyer))completion
+- (void)addSample:(MBOSample *)sample objectId:(NSString *)objectId deviceId:(NSString *)deviceId publicSensorName:(NSString *)publicSensorName completion:(void (^)(NSString *queueIdentifiyer))completion
 {
     [_diskAccessQueue addOperationWithBlock:^
      {
          NSMutableDictionary *objectData = [NSMutableDictionary dictionary];
+         if (publicSensorName)
+         {
+             objectData[@"publicSensorName"] = publicSensorName;
+         }
          if(sample)
          {
              objectData[@"sample"] = sample;
@@ -165,12 +136,25 @@
         NSDictionary *jobData = [NSKeyedUnarchiver unarchiveObjectWithData:encodedJobData];
         if([jobData stringForKey:@"deviceId"].length > 0)
         {
-
-            [_mnuboSDK sendSample:[jobData objectForKey:@"sample"] forDeviceId:[jobData stringForKey:@"deviceId"] completion:nil];
+            if ([jobData objectForKey:@"publicSensorName"])
+            {
+                [_mnuboSDK sendSample:[jobData objectForKey:@"sample"] toPublicSensorName:[jobData objectForKey:@"publicSensorName"] withDeviceId:[jobData objectForKey:@"deviceId"] completion:nil];
+            }
+            else
+            {
+                [_mnuboSDK sendSample:[jobData objectForKey:@"sample"] forDeviceId:[jobData stringForKey:@"deviceId"] completion:nil];
+            }
         }
         else
         {
-            [_mnuboSDK sendSample:[jobData objectForKey:@"sample"] forObjectId:[jobData stringForKey:@"objectId"] completion:nil];
+            if ([jobData objectForKey:@"publicSensorName"])
+            {
+                [_mnuboSDK sendSample:[jobData objectForKey:@"sample"] toPublicSensorName:[jobData objectForKey:@"publicSensorName"] withObjectId:[jobData objectForKey:@"objectId"] completion:nil];
+            }
+            else
+            {
+                [_mnuboSDK sendSample:[jobData objectForKey:@"sample"] forObjectId:[jobData stringForKey:@"objectId"] completion:nil];
+            }
         }
     }
 
