@@ -130,24 +130,16 @@ static BOOL loggingEnabled = NO;
 
         [self loadTokens];
         
-        if (!_clientAccessToken || !_clientExpiresIn)
-        {
-            [self getClientAccessTokenCompletion:^(MBOError *error) {
-                if (!error)
-                {
-                    MBOLog(@"Client access token successfully fetched during SDK initialization");
-                }
-                else
-                {
-                    MBOLog(@"ERROR while fetching the client access token during SDK initialization");
-                }
-            }];
-        }
-        else
-        {
-            MBOLog(@"Client access token found in the user defaults : %@", [_clientAccessToken substringToIndex:10]);
-            MBOLog(@"It expires in %@ seconds from its generation", _clientExpiresIn);
-        }
+        [self getClientAccessTokenCompletion:^(MBOError *error) {
+            if (!error)
+            {
+                MBOLog(@"Client access token successfully fetched during SDK initialization");
+            }
+            else
+            {
+                MBOLog(@"ERROR while fetching the client access token during SDK initialization");
+            }
+        }];
     }
 
     return self;
@@ -179,12 +171,6 @@ static BOOL loggingEnabled = NO;
 
 - (void)loadTokens
 {
-    
-    _clientAccessToken = [[PDKeychainBindings sharedKeychainBindings] stringForKey:kMnuboClientAccessTokenKey];
-    _clientExpiresIn = [[NSUserDefaults standardUserDefaults] objectForKey:kMnuboClientExpiresInKey];
-    _clientTokenTimestamp = [[NSUserDefaults standardUserDefaults] objectForKey:kMnuboClientTokenTimestampKey];
-    
-    
     _userAccessToken = [[PDKeychainBindings sharedKeychainBindings] stringForKey:kMnuboUserAccessTokenKey];
     _userRefreshToken = [[PDKeychainBindings sharedKeychainBindings] stringForKey:kMnuboUserRefreshTokenKey];
     _userExpiresIn = [[NSUserDefaults standardUserDefaults] objectForKey:kMnuboUserExpiresInKey];
@@ -193,9 +179,6 @@ static BOOL loggingEnabled = NO;
 
 - (void)saveTokens
 {
-    [[PDKeychainBindings sharedKeychainBindings] setString:_clientAccessToken forKey:kMnuboClientAccessTokenKey];
-    [[NSUserDefaults standardUserDefaults] setObject:_clientExpiresIn forKey:kMnuboClientExpiresInKey];
-    [[NSUserDefaults standardUserDefaults] setObject:_clientTokenTimestamp forKey:kMnuboClientTokenTimestampKey];
     
     [[PDKeychainBindings sharedKeychainBindings] setString:_userAccessToken forKey:kMnuboUserAccessTokenKey];
     [[PDKeychainBindings sharedKeychainBindings] setString:_userRefreshToken forKey:kMnuboUserRefreshTokenKey];
