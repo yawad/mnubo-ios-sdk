@@ -8,9 +8,6 @@
 
 #import "MBOError.h"
 #import "MBOObject.h"
-#import "MBOSensorData.h"
-#import "MBOCommonSensorData.h"
-#import "MBOSensorDefinition.h"
 #import "MBOUser.h"
 #import "MBOAttribute.h"
 #import "MBOSample.h"

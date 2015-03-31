@@ -8,7 +8,6 @@
 
 #import "MBOObject.h"
 #import "NSDictionary+mnubo.h"
-#import "MBOSensorDefinition+Private.h"
 #import "MBOMacros.h"
 #import "MBOAttribute+Private.h"
 #import "MBOLocation.h"
@@ -65,7 +64,7 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
         {
             if([sensorData isKindOfClass:[NSDictionary class]])
             {
-                [sensors addObject:[[MBOSensorDefinition alloc] initWithDictionary:sensorData]];
+                [sensors addObject:sensorData];
             }
         }];
         
@@ -295,22 +294,5 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
     _location.elevation = @(elevation);
 }
 
-//------------------------------------------------------------------------------
-#pragma mark Public methods
-//------------------------------------------------------------------------------
-
-- (MBOSensorDefinition *)getSensorDefinitionOfSensorName:(NSString *)sensorName
-{
-    __block MBOSensorDefinition *definitionFound = nil;
-    [_sensorsDefinition enumerateObjectsUsingBlock:^(MBOSensorDefinition *definition, NSUInteger idx, BOOL *stop)
-    {
-        if([definition.name isEqualToString:sensorName])
-        {
-            definitionFound = definition;
-        }
-    }];
-    
-    return definitionFound;
-}
 
 @end

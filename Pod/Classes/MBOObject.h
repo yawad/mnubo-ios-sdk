@@ -8,8 +8,8 @@
 
 #import <Foundation/Foundation.h>
 
-@class MBOSensorDefinition;
 @class MBOAttribute;
+@class MBOLocation;
 
 @interface MBOObject : NSObject <NSCopying, NSCoding>
 
@@ -35,7 +35,6 @@
 
 @property(nonatomic, copy) NSString *collectionId;
 
-- (MBOSensorDefinition *)getSensorDefinitionOfSensorName:(NSString *)sensorName;
 
 - (NSDictionary *)toDictionary;
 
