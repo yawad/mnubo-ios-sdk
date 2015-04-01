@@ -49,11 +49,18 @@ NSString const * kMBOUserAttributesKey = @"attributes";
     self = [super init];
     if(self)
     {
+        _innerAttributes = [NSMutableArray array];
+        _registrationDate = [NSDate date];
+        
         _userId = [dictionary objectForKey:kMBOUserUserIdKey];
         _username = [dictionary objectForKey:kMBOUserUsernameKey];
         _firstName = [dictionary objectForKey:kMBOUserFirstNameKey];
         _lastName = [dictionary objectForKey:kMBOUserLastNameKey];
-        _registrationDate = [MBODateHelper dateFromMnuboString:[dictionary objectForKey:kMBOUserRegistrationDateKey]];
+        
+        if ([dictionary objectForKey:kMBOUserRegistrationDateKey])
+        {
+            _registrationDate = [MBODateHelper dateFromMnuboString:[dictionary objectForKey:kMBOUserRegistrationDateKey]];
+        }
 
         NSMutableArray *attributes = [NSMutableArray array];
         NSArray *attributesDictionaries = [dictionary objectForKey:kMBOUserAttributesKey];

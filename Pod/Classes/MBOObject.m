@@ -27,7 +27,6 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
 }
 
 @property(nonatomic, readwrite, copy) NSString *objectId;
-@property(nonatomic, readwrite, copy) NSArray *sensorsDefinition;
 @property(nonatomic, copy) MBOLocation *location;
 
 @end
@@ -39,7 +38,6 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
     self = [super init];
     if(self)
     {
-        _activate = YES;
         _innerAttributes = [NSMutableArray array];
         _location = [[MBOLocation alloc] init];
         _registrationDate = [NSDate date];
@@ -53,22 +51,14 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
     self = [self init];
     if(self)
     {
+        _innerAttributes = [NSMutableArray array];
+        _location = [[MBOLocation alloc] init];
+        _registrationDate = [NSDate date];
+        
         _objectId = [dictionary stringForKey:kMBOObjectObjectIdKey];
         _deviceId = [dictionary stringForKey:kMBOObjectDeviceIdKey];
         _objectModelName = [dictionary stringForKey:kMBOObjectModelNameKey];
         _ownerUsername = [dictionary stringForKey:kMBOObjectOwnerKey];
-        
-        NSArray *sensorsData = [dictionary arrayForKey:@"sensors"];
-        NSMutableArray *sensors = [NSMutableArray arrayWithCapacity:sensorsData.count];
-        [sensorsData enumerateObjectsUsingBlock:^(NSDictionary *sensorData, NSUInteger idx, BOOL *stop)
-        {
-            if([sensorData isKindOfClass:[NSDictionary class]])
-            {
-                [sensors addObject:sensorData];
-            }
-        }];
-        
-        _sensorsDefinition = sensors;
         
         NSMutableArray *attributes = [NSMutableArray array];
         NSArray *attributesDictionaries = [dictionary objectForKey:@"attributes"];
@@ -84,9 +74,12 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
         _innerAttributes = attributes;
         
         _location = [[MBOLocation alloc] initWithDictionary:[dictionary dictionaryForKey:@"registration_location"]];
-        _registrationDate = [MBODateHelper dateFromMnuboString:[dictionary stringForKey:@"registration_date"]];
+        if ([dictionary stringForKey:@"registration_date"])
+        {
+            _registrationDate = [MBODateHelper dateFromMnuboString:[dictionary stringForKey:@"registration_date"]];
+        }
 
-        _collectionId = [dictionary stringForKey:kMBOObjectCollectionIdKey];
+        _collectionId = [dictionary objectForKey:@"collectionId"];
     }
 
     return self;
@@ -99,11 +92,9 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
     if (self)
     {
         _objectModelName = [aDecoder decodeObjectForKey:@"objectModelName"];
-        _activate = [aDecoder decodeBoolForKey:@"activate"];
         _deviceId = [aDecoder decodeObjectForKey:@"deviceId"];
         _ownerUsername = [aDecoder decodeObjectForKey:@"ownerUsername"];
         _objectId = [aDecoder decodeObjectForKey:@"objectId"];
-        _sensorsDefinition = [aDecoder decodeObjectForKey:@"sensorsDefinition"];
         _innerAttributes = [aDecoder decodeObjectForKey:@"attributes"];
         _location = [aDecoder decodeObjectForKey:@"location"];
         _registrationDate = [aDecoder decodeObjectForKey:@"registration_date"];
@@ -116,11 +107,9 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
 - (void)encodeWithCoder:(NSCoder *)aCoder
 {
     [aCoder encodeObject:_objectModelName forKey:@"objectModelName"];
-    [aCoder encodeBool:_activate forKey:@"activate"];
     [aCoder encodeObject:_deviceId forKey:@"deviceId"];
     [aCoder encodeObject:_ownerUsername forKey:@"ownerUsername"];
     [aCoder encodeObject:_objectId forKey:@"objectId"];
-    [aCoder encodeObject:_sensorsDefinition forKey:@"sensorsDefinition"];
     [aCoder encodeObject:_innerAttributes forKey:@"attributes"];
     [aCoder encodeObject:_location forKey:@"location"];
     [aCoder encodeObject:_registrationDate forKey:@"registration_date"];
@@ -132,11 +121,9 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
     MBOObject *copy = [[MBOObject alloc] init];
     
     copy.objectModelName = _objectModelName;
-    copy.activate = _activate;
     copy.deviceId = _deviceId;
     copy.ownerUsername = _ownerUsername;
     copy.objectId = _objectId;
-    copy.sensorsDefinition = _sensorsDefinition;
     copy.location = _location;
     copy.registrationDate = _registrationDate;
     copy.collectionId = _collectionId;
@@ -157,26 +144,22 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
     }
     
     return IsEqualToString(_objectModelName, otherObject.objectModelName) &&
-    _activate == otherObject.activate &&
     IsEqualToString(_deviceId, otherObject.deviceId) &&
     IsEqualToString(_ownerUsername, otherObject.ownerUsername) &&
     IsEqualToString(_objectId, otherObject.objectId) &&
-    IsEqualToArray(_sensorsDefinition, otherObject.sensorsDefinition) &&
     IsEqualToArray(_innerAttributes, otherObject.attributes) &&
     IsEqual(_location, otherObject.location) &&
     IsEqualToDate(_registrationDate, otherObject.registrationDate) &&
-    IsEqualToString(_collectionId, otherObject.collectionId);
+    IsEqualToArray(_collectionId, otherObject.collectionId);
 }
 
 - (NSUInteger)hash
 {
     NSUInteger hash = 0;
     hash += [_objectModelName hash];
-    hash += _activate;
     hash += [_deviceId hash];
     hash += [_ownerUsername hash];
     hash += [_objectId hash];
-    hash += [_sensorsDefinition hash];
     hash += [_innerAttributes hash];
     hash += [_location hash];
     hash += [_registrationDate hash];
@@ -222,7 +205,7 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
     
     SafeSetValueForKey(_dictionary, @"registration_date", [MBODateHelper mnuboStringFromDate:_registrationDate]);
 
-    if (_collectionId.length)
+    if (_collectionId)
     {
         [_dictionary setObject:@{@"id" : _collectionId} forKey:kMBOObjectCollectionIdKey];
     }

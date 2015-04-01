@@ -40,9 +40,12 @@ typedef void (^MBOBasicClientCompletionBlock)(id data, NSDictionary *responseHea
 
     NSMutableURLRequest *request = [MBOBasicHttpClient generateRequestWithPath:path method:@"PUT" headers:headers parameters:parameters];
 
-    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:data options:0 error:nil];
-    [request setHTTPBody:jsonData];
-
+    if (data)
+    {
+        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:data options:0 error:nil];
+        [request setHTTPBody:jsonData];
+    }
+    
     // Network call needs to be trigger in the main thread
     dispatch_async(dispatch_get_main_queue(), ^
     {
@@ -60,9 +63,11 @@ typedef void (^MBOBasicClientCompletionBlock)(id data, NSDictionary *responseHea
     
     NSMutableURLRequest *request = [MBOBasicHttpClient generateRequestWithPath:path method:@"POST" headers:headers parameters:parameters];
     
-    
-    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:data options:0 error:nil];
-    [request setHTTPBody:jsonData];
+    if (data)
+    {
+        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:data options:0 error:nil];
+        [request setHTTPBody:jsonData];
+    }
 
     // Network call needs to be trigger in the main thread
     dispatch_async(dispatch_get_main_queue(), ^

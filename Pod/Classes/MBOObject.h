@@ -15,11 +15,9 @@
 
 /// Read only field
 @property(nonatomic, readonly, copy) NSString *objectId;
-@property(nonatomic, readonly, copy) NSArray *sensorsDefinition;
 
 /// Mandatory fields
 @property(nonatomic, copy) NSString *objectModelName;
-@property(nonatomic) BOOL activate;
 
 /// Optional fields
 @property(nonatomic, copy) NSString *deviceId;
@@ -33,7 +31,7 @@
 
 @property(nonatomic, copy) NSDate *registrationDate;
 
-@property(nonatomic, copy) NSString *collectionId;
+@property(nonatomic, copy) NSArray *collectionId;
 
 
 - (NSDictionary *)toDictionary;

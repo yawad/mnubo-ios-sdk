@@ -36,7 +36,12 @@
     self = [super init];
     if(self)
     {
+        
         _commonValues = [[NSMutableDictionary alloc] initWithDictionary:dictionary];
+        if (![_commonValues objectForKey:@"registration_date"])
+        {
+            [_commonValues setObject:[NSDate date] forKey:@"registration_date"];
+        }
     }
     
     return self;
@@ -94,6 +99,7 @@
 - (NSDictionary *)toDictionary
 {
     SafeSetValueForKey(_commonValues, @"timestamp", [MBODateHelper mnuboStringFromDate:[_commonValues objectForKey:@"timestamp"]]);
+    SafeSetValueForKey(_commonValues, @"registration_date", [MBODateHelper mnuboStringFromDate:[_commonValues objectForKey:@"registration_date"]]);
     return _commonValues;
 }
 

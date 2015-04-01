@@ -13,7 +13,8 @@
 #import "MBOSample.h"
 
 
-extern NSString * const kMBOErrorBadCredentialsMessage;
+extern NSString * const kMBOErrorMessageBadCredentials;
+
 
 @interface mnubo : NSObject
 
@@ -76,7 +77,7 @@ extern NSString * const kMBOErrorBadCredentialsMessage;
 
 - (void)resetPasswordForUsername:(NSString *)username completion:(void (^)(MBOError *error))completion;
 
-- (void)confirmResetPasswordForUsername:(NSString *)username newPassword:(NSString *)newPassword token:(NSString *)token completion:(void (^)(MBOError *error))completion;
+- (void)confirmResetPasswordForUsername:(NSString *)username newPassword:(NSString *)newPassword confirmedNewPassword:(NSString *)confirmedNewPassword token:(NSString *)token completion:(void (^)(MBOError *error))completion;
 
 - (void)confirmEmailForUsername:(NSString *)username password:(NSString *)password token:(NSString *)token completion:(void (^) (MBOError *error))completion;
 

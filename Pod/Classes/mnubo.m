@@ -19,7 +19,8 @@
 #import "PDKeychainBindings.h"
 #import "MBOMacros.h"
 
-NSString * const kMBOErrorBadCredentialsMessage = @"Bad credentials";
+NSString * const kMBOErrorMessageBadCredentials = @"Bad credentials";
+
 
 NSString * const kMnuboClientAccessTokenKey = @"com.mnubo.sdk.client_access_token";
 NSString * const kMnuboClientExpiresInKey = @"com.mnubo.sdk.client_expires_in";
@@ -197,6 +198,12 @@ static BOOL loggingEnabled = NO;
 
 - (void)createUser:(MBOUser *)user updateIfAlreadyExist:(BOOL)updateIfAlreadyExist allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(MBOError *error))completion
 {
+    if (!user)
+    {
+        if(completion) completion([MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeInvalidParameter userInfo:nil]);
+        return;
+    }
+    
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _clientAccessToken] };
     NSDictionary *parameters = @{@"updateifexists" : updateIfAlreadyExist ? @"1" : @"0"};
 
@@ -361,9 +368,9 @@ static BOOL loggingEnabled = NO;
 }
 
 
-- (void)getObjectsOfUsername:(NSString *)username allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^) (NSArray *objects, NSError *error))completion
+- (void)getObjectsOfUsername:(NSString *)username allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^) (NSArray *objects, MBOError *error))completion
 {
-
+    
     NSString *getObjectsOfUserPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:@"/api/v2/users/%@/objects", [username urlEncode]]];
     
     MBOLog(@"Get user's objects with path : %@", getObjectsOfUserPath);
@@ -666,7 +673,7 @@ static BOOL loggingEnabled = NO;
 }
 
 //------------------------------------------------------------------------------
-#pragma mark Sensor data
+#pragma mark Sample
 //------------------------------------------------------------------------------
 
 - (void)sendSample:(MBOSample *)sample toPublicSensorName:(NSString *)sensorName withObjectId:(NSString *)objectId completion:(void (^) (MBOError *error))completion
@@ -831,7 +838,7 @@ static BOOL loggingEnabled = NO;
 }
 
 //------------------------------------------------------------------------------
-#pragma mark Tokens
+#pragma mark Authentication
 //------------------------------------------------------------------------------
 - (void)getClientAccessTokenCompletion:(void (^)(MBOError *error))completion
 {
@@ -840,7 +847,7 @@ static BOOL loggingEnabled = NO;
     NSDictionary *headers = @{ @"Content-Type": @"application/json", @"Authorization" : [NSString stringWithFormat:@"Basic %@", _clientCredentialsTokenBasicAuthentication] };
     NSDictionary *parameters = @{ @"grant_type" : @"client_credentials"};
     
-    [_httpClient POST:getTokenPath headers:headers parameters:parameters data:@{} completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
+    [_httpClient POST:getTokenPath headers:headers parameters:parameters data:nil completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
     {
          if(!error && [data isKindOfClass:[NSDictionary class]])
          {
@@ -861,6 +868,12 @@ static BOOL loggingEnabled = NO;
 
 - (void)getUserAccessTokenWithUsername:(NSString *)username password:(NSString *)password completion:(void (^)(MBOError *error))completion
 {
+    if (!username || !password || [username length] == 0 || [password length] == 0)
+    {
+        if(completion) completion([MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeInvalidParameter userInfo:nil]);
+        return;
+    }
+    
     NSString *getTokenPath = [NSString stringWithFormat:@"%@%@", _baseURL, kMnuboGetTokenPath];
     
     MBOLog(@"Get user access token with path : %@", getTokenPath);
@@ -868,7 +881,7 @@ static BOOL loggingEnabled = NO;
     NSDictionary *headers = @{ @"Content-Type": @"application/x-www-form-urlencoded"};
     NSDictionary *parameters = @{ @"grant_type": @"password", @"client_id": _clientId, @"username": username, @"password": password};
     
-    [_httpClient POST:getTokenPath headers:headers parameters:parameters data:@{} completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
+    [_httpClient POST:getTokenPath headers:headers parameters:parameters data:nil completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
     {
          if(!error && [data isKindOfClass:[NSDictionary class]])
          {
@@ -896,9 +909,12 @@ static BOOL loggingEnabled = NO;
     MBOLog(@"Get user access token with refresh token and path : %@", getTokenPath);
     
     NSDictionary *headers = @{ @"Content-Type": @"application/x-www-form-urlencoded"};
-    NSDictionary *parameters = @{ @"grant_type": @"refresh_token", @"client_id": _clientId, @"refresh_token": _userRefreshToken};
+    NSMutableDictionary *parameters = [[NSMutableDictionary alloc] init];
+    [parameters setValue:@"refresh_token" forKey:@"grant_type"];
+    [parameters setValue:_clientId forKey:@"client_id"];
+    [parameters setValue:_userRefreshToken forKey:@"refresh_token"];
     
-    [_httpClient POST:getTokenPath headers:headers parameters:parameters data:@{} completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
+    [_httpClient POST:getTokenPath headers:headers parameters:parameters data:nil completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
      {
          if(!error && [data isKindOfClass:[NSDictionary class]])
          {
@@ -928,66 +944,6 @@ static BOOL loggingEnabled = NO;
      }];
 }
 
-- (BOOL)isClientAccessTokenValidAutomaticRefresh:(BOOL)refresh
-{
-    NSTimeInterval interval = [_userTokenTimestamp timeIntervalSinceNow];
-    double remainingValidity = interval + [_userExpiresIn doubleValue];
-    
-    MBOLog(@"Validity : %f", remainingValidity);
-    
-    if (remainingValidity <= 0 && refresh)
-    {
-        [self getClientAccessTokenCompletion:^(MBOError *error) {
-            if (!error)
-            {
-                MBOLog(@"Client Access Token refreshed");
-            }
-            else
-            {
-                MBOLog(@"ERROR while refreshing the token.");
-            }
-        }];
-        return NO;
-    }
-    else
-    {
-        return YES;
-    }
-}
-
-- (BOOL)isUserAccessTokenValidAutomaticRefresh:(BOOL)refresh
-{
-    if (_userRefreshToken)
-    {
-        NSTimeInterval interval = [_userTokenTimestamp timeIntervalSinceNow];
-        double remainingValidity = interval + [_userExpiresIn doubleValue];
-        
-        MBOLog(@"Validity : %f", remainingValidity);
-        
-        if (remainingValidity <= 0 && refresh)
-        {
-            [self getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error) {
-                if (!error)
-                {
-                    MBOLog(@"Refresh Token used.");
-                }
-                else
-                {
-                    MBOLog(@"ERROR while refreshing the token.");
-                }
-            }];
-            return NO;
-        }
-        else
-        {
-            return YES;
-        }
-    }
-    else
-    {
-        return NO;
-    }
-}
 
 - (BOOL)isUserConnected
 {
@@ -1054,19 +1010,19 @@ static BOOL loggingEnabled = NO;
     
 }
 
-- (void)confirmResetPasswordForUsername:(NSString *)username newPassword:(NSString *)newPassword token:(NSString *)token completion:(void (^)(MBOError *error))completion
+- (void)confirmResetPasswordForUsername:(NSString *)username newPassword:(NSString *)newPassword confirmedNewPassword:(NSString *)confirmedNewPassword token:(NSString *)token completion:(void (^)(MBOError *error))completion
 {
-    [self confirmResetPasswordForUsername:username newPassword:newPassword token:token allowRefreshClient:YES completion:completion];
+    [self confirmResetPasswordForUsername:username newPassword:newPassword confirmedNewPassword:confirmedNewPassword token:token allowRefreshClient:YES completion:completion];
 }
 
-- (void)confirmResetPasswordForUsername:(NSString *)username newPassword:(NSString *)newPassword token:(NSString *)token allowRefreshClient:(BOOL)allowRefreshClient completion:(void (^)(MBOError *error))completion
+- (void)confirmResetPasswordForUsername:(NSString *)username newPassword:(NSString *)newPassword confirmedNewPassword:(NSString *)confirmedNewPassword token:(NSString *)token allowRefreshClient:(BOOL)allowRefreshClient completion:(void (^)(MBOError *error))completion
 {
     NSString *resetPasswordPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboResetPasswordPath, [username urlEncode]]];
     
     MBOLog(@"Confirm reset password with path : %@", resetPasswordPath);
     
     NSDictionary *headers = @{ @"Authorization": [NSString stringWithFormat:@"Bearer %@", _clientAccessToken]};
-    NSDictionary *data = @{ @"token": token, @"password": newPassword, @"confirmed_password": newPassword };
+    NSDictionary *data = @{ @"token": token, @"password": newPassword, @"confirmed_password": confirmedNewPassword };
     
     [_httpClient POST:resetPasswordPath headers:headers parameters:nil data:data completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
      {
@@ -1078,7 +1034,7 @@ static BOOL loggingEnabled = NO;
          else if(error.code == 401 && allowRefreshClient)
          {
              MBOLog(@"Error with the authentification");
-             [self confirmResetPasswordForUsername:username newPassword:newPassword token:token allowRefreshClient:NO completion:completion];
+             [self confirmResetPasswordForUsername:username newPassword:newPassword confirmedNewPassword:confirmedNewPassword token:token allowRefreshClient:NO completion:completion];
          }
          else
          {
@@ -1111,10 +1067,10 @@ static BOOL loggingEnabled = NO;
              MBOLog(@"Email has been confirmed successfully");
              if (completion) completion(nil);
          }
-         else if(error.code == 401)
+         else if(error.code == 401 && allowRefreshClient)
          {
              MBOLog(@"Error with the authentification");
-             [self confirmEmailForUsername:username password:password token:token allowRefreshClient:YES completion:completion];
+             [self confirmEmailForUsername:username password:password token:token allowRefreshClient:NO completion:completion];
          }
          else
          {
