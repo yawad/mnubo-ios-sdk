@@ -1,9 +1,7 @@
 //
 //  MBOUser.h
-//  SensorLogger
-//
-//  Created by Hugo Lefrancois on 2014-06-16.
-//  Copyright (c) 2014 Mirego. All rights reserved.
+//  
+//  Copyright (c) 2015 mnubo. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
@@ -20,6 +18,8 @@
 @property(nonatomic, copy) NSString *lastName;
 @property(nonatomic, copy) NSDate *registrationDate;
 @property(nonatomic, readonly, copy) NSArray *attributes;
+@property (nonatomic, copy) NSArray *collectionIds;
+@property (nonatomic, copy) NSArray *groupIds;
 
 - (void)addAttribute:(MBOAttribute *)attribute;
 - (void)insertAttribute:(MBOAttribute *)attribute atIndex:(NSInteger)index;

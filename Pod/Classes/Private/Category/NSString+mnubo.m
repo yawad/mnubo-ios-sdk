@@ -1,9 +1,7 @@
 //
 //  NSString+mnubo.m
-//  SensorLogger
-//
-//  Created by Hugo Lefrancois on 2014-06-17.
-//  Copyright (c) 2014 Mirego. All rights reserved.
+//  
+//  Copyright (c) 2015 mnubo. All rights reserved.
 //
 
 #import "NSString+mnubo.h"

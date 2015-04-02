@@ -1,9 +1,7 @@
 //
 //  MBOValueContainer.m
-//  SensorLogger
-//
-//  Created by Dominic Plouffe on 2014-07-14.
-//  Copyright (c) 2014 Mirego. All rights reserved.
+//  
+//  Copyright (c) 2015 mnubo. All rights reserved.
 //
 
 #import "MBOValueContainer.h"

@@ -1,9 +1,7 @@
 //
 //  mnubo.m
-//  SensorLogger
-//
-//  Created by Hugo Lefrancois on 2014-06-16.
-//  Copyright (c) 2014 Mirego. All rights reserved.
+//  
+//  Copyright (c) 2015 mnubo. All rights reserved.
 //
 
 #import "mnubo.h"
@@ -989,6 +987,7 @@ static BOOL loggingEnabled = NO;
     
     NSDictionary *headers = @{ @"Authorization": [NSString stringWithFormat:@"Bearer %@", _clientAccessToken]};
 
+    __weak mnubo *weakSelf = self;
     [_httpClient DELETE:resetPasswordPath headers:headers parameters:nil completion:^(id data, NSError *error)
     {
         if (!error)
@@ -999,7 +998,17 @@ static BOOL loggingEnabled = NO;
         else if(error.code == 401 && allowRefreshClient)
         {
             MBOLog(@"Error with the authentification");
-            [self resetPasswordForUsername:username allowRefreshClient:NO completion:completion];
+            [weakSelf getClientAccessTokenCompletion:^(MBOError *error)
+             {
+                 if(!error)
+                 {
+                     [weakSelf resetPasswordForUsername:username allowRefreshClient:NO completion:completion];
+                 }
+                 else
+                 {
+                     if(completion) completion(error);
+                 }
+             }];
         }
         else
         {
@@ -1024,6 +1033,7 @@ static BOOL loggingEnabled = NO;
     NSDictionary *headers = @{ @"Authorization": [NSString stringWithFormat:@"Bearer %@", _clientAccessToken]};
     NSDictionary *data = @{ @"token": token, @"password": newPassword, @"confirmed_password": confirmedNewPassword };
     
+    __weak mnubo *weakSelf = self;
     [_httpClient POST:resetPasswordPath headers:headers parameters:nil data:data completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
      {
          if (!error)
@@ -1034,7 +1044,17 @@ static BOOL loggingEnabled = NO;
          else if(error.code == 401 && allowRefreshClient)
          {
              MBOLog(@"Error with the authentification");
-             [self confirmResetPasswordForUsername:username newPassword:newPassword confirmedNewPassword:confirmedNewPassword token:token allowRefreshClient:NO completion:completion];
+             [weakSelf getClientAccessTokenCompletion:^(MBOError *error)
+              {
+                  if(!error)
+                  {
+                      [weakSelf confirmResetPasswordForUsername:username newPassword:newPassword confirmedNewPassword:confirmedNewPassword token:token allowRefreshClient:NO completion:completion];
+                  }
+                  else
+                  {
+                      if(completion) completion(error);
+                  }
+              }];
          }
          else
          {
@@ -1057,9 +1077,10 @@ static BOOL loggingEnabled = NO;
     
     MBOLog(@"Confirm email with path : %@", confirmEmailPath);
     
-    NSDictionary *headers = @{ @"Authorization": [NSString stringWithFormat:@"Bearer %@", _userAccessToken]};
+    NSDictionary *headers = @{ @"Authorization": [NSString stringWithFormat:@"Bearer %@", _clientAccessToken]};
     NSDictionary *data = @{ @"token": token, @"password": password};
 
+    __weak mnubo *weakSelf = self;
     [_httpClient POST:confirmEmailPath headers:headers parameters:nil data:data completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
      {
          if (!error)
@@ -1070,7 +1091,17 @@ static BOOL loggingEnabled = NO;
          else if(error.code == 401 && allowRefreshClient)
          {
              MBOLog(@"Error with the authentification");
-             [self confirmEmailForUsername:username password:password token:token allowRefreshClient:NO completion:completion];
+             [weakSelf getClientAccessTokenCompletion:^(MBOError *error)
+              {
+                  if(!error)
+                  {
+                      [weakSelf confirmEmailForUsername:username password:password token:token allowRefreshClient:NO completion:completion];
+                  }
+                  else
+                  {
+                      if(completion) completion(error);
+                  }
+              }];
          }
          else
          {
