@@ -25,9 +25,20 @@
             {
                 _mnuboErrorMessage = [extraInfo objectForKey:@"error_description"];
             }
+            
+            // Custom error code
+            if ([_mnuboErrorMessage rangeOfString:@"User "].location != NSNotFound && [_mnuboErrorMessage rangeOfString:@" already exists"].location != NSNotFound)
+            {
+                _mnuboErrorCode = MBOErrorCodeUserAlreadyExists;
+            }
+            else if ([_mnuboErrorMessage rangeOfString:@"Bad credentials"].location != NSNotFound)
+            {
+                    _mnuboErrorCode = MBOErrorCodeBadCredentials;
+            }
         }
     }
-
+    
+    
     return self;
 }
 

@@ -17,9 +17,6 @@
 #import "PDKeychainBindings.h"
 #import "MBOMacros.h"
 
-NSString * const kMBOErrorMessageBadCredentials = @"Bad credentials";
-
-
 NSString * const kMnuboClientAccessTokenKey = @"com.mnubo.sdk.client_access_token";
 NSString * const kMnuboClientExpiresInKey = @"com.mnubo.sdk.client_expires_in";
 NSString * const kMnuboClientTokenTimestampKey = @"com.mnubo.sdk.client_token_timestamp";

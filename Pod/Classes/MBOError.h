@@ -14,7 +14,9 @@ typedef NS_ENUM(NSUInteger, MBOErrorCode)
     MBOErrorCodeInvalidDataReceived = 1000,
     MBOErrorCodeInvalidParameter,
     MBOErrorCodeGetNewCreatedObjectError,
-    MBOErrorCodeWillBeRetryLaterAutomatically
+    MBOErrorCodeWillBeRetryLaterAutomatically,
+    MBOErrorCodeBadCredentials,
+    MBOErrorCodeUserAlreadyExists
 };
 
 @property(nonatomic, readonly) NSString *mnuboErrorMessage;
