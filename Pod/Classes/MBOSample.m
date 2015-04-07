@@ -9,10 +9,12 @@
 #import "MBOSample.h"
 #import "MBOMacros.h"
 #import "MBODateHelper.h"
+#import "MBOLocation+Private.h"
 
 @interface MBOSample()
 
-    @property(nonatomic, copy) NSMutableDictionary *commonValues;
+@property(nonatomic, copy) NSMutableDictionary *commonValues;
+@property(nonatomic, copy) MBOLocation *location;
 
 @end
 
@@ -24,8 +26,10 @@
     self = [super init];
     if(self)
     {
+        _location = [[MBOLocation alloc] init];
+        _attributes = [NSMutableDictionary dictionary];
         _commonValues = [[NSMutableDictionary alloc] init];
-        [_commonValues setObject:[NSDate date] forKey:@"registration_date"];
+        _registrationDate = [NSDate date];
     }
     
     return self;
@@ -36,12 +40,11 @@
     self = [super init];
     if(self)
     {
-        
+        _registrationDate = [NSDate date];
+        _attributes = [NSMutableDictionary dictionary];
+        _location = [[MBOLocation alloc] init];
         _commonValues = [[NSMutableDictionary alloc] initWithDictionary:dictionary];
-        if (![_commonValues objectForKey:@"registration_date"])
-        {
-            [_commonValues setObject:[NSDate date] forKey:@"registration_date"];
-        }
+
     }
     
     return self;
@@ -49,7 +52,7 @@
 
 - (void)addSensorWithName:(NSString *)name andDictionary:(NSDictionary *)sensorDictionary
 {
-    [_commonValues setValue:sensorDictionary forKey:name];
+    [_attributes setValue:sensorDictionary forKey:name];
 }
 
 - (id)initWithCoder:(NSCoder *)aDecoder
@@ -98,9 +101,54 @@
 
 - (NSDictionary *)toDictionary
 {
-    SafeSetValueForKey(_commonValues, @"timestamp", [MBODateHelper mnuboStringFromDate:[_commonValues objectForKey:@"timestamp"]]);
-    SafeSetValueForKey(_commonValues, @"registration_date", [MBODateHelper mnuboStringFromDate:[_commonValues objectForKey:@"registration_date"]]);
-    return _commonValues;
+    NSMutableDictionary *_dictionary = [[NSMutableDictionary alloc] init];
+    
+    SafeSetValueForKey(_dictionary, @"timestamp", [MBODateHelper mnuboStringFromDate:_registrationDate]);
+    SafeSetValueForKey(_dictionary, @"name", _name);
+    
+    
+    for (NSString *key in _attributes)
+    {
+        SafeSetValueForKey(_dictionary, key, [_attributes valueForKey:key]);
+    }
+
+    
+    if (_location.longitude && _location.latitude)
+    {
+        [_dictionary setObject:[_location toDictionary] forKey:@"registration_location"];
+    }
+    
+    return _dictionary;
+}
+
+- (double)latitude
+{
+    return [_location.latitude doubleValue];
+}
+
+- (void)setLatitude:(double)latitude
+{
+    _location.latitude = @(latitude);
+}
+
+- (double)longitude
+{
+    return [_location.longitude doubleValue];
+}
+
+- (void)setLongitude:(double)longitude
+{
+    _location.longitude = @(longitude);
+}
+
+- (double)elevation
+{
+    return [_location.elevation doubleValue];
+}
+
+- (void)setElevation:(double)elevation
+{
+    _location.elevation = @(elevation);
 }
 
 @end

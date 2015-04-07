@@ -10,6 +10,16 @@
 
 @interface MBOSample : NSObject
 
+@property(nonatomic, copy) NSString *name;
+@property(nonatomic, copy) NSDate *registrationDate;
+
+@property(nonatomic) double latitude;
+@property(nonatomic) double longitude;
+@property(nonatomic) double elevation;
+
+@property(nonatomic, copy) NSMutableDictionary *attributes;
+
+
 - (instancetype)init;
 - (instancetype)initWithDictionary:(NSDictionary *)dictionary;
 
