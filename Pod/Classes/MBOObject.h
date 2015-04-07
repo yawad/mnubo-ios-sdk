@@ -21,7 +21,7 @@
 @property(nonatomic, copy) NSString *deviceId;
 @property(nonatomic, copy) NSString *ownerUsername;
 
-@property(nonatomic, readonly) NSArray *attributes;
+@property(nonatomic, readonly) NSDictionary *attributes;
 
 @property(nonatomic) double latitude;
 @property(nonatomic) double longitude;
@@ -29,12 +29,12 @@
 
 @property(nonatomic, copy) NSDate *registrationDate;
 
-@property(nonatomic, copy) NSArray *collectionId;
+@property(nonatomic, copy) NSArray *collections;
 
 
 - (NSDictionary *)toDictionary;
 
-- (void)setAttributes:(NSArray *)attributes;
+- (void)setAttributes:(NSDictionary *)attributes;
 
 - (void)addAttribute:(MBOAttribute *)attribute;
 - (void)insertAttribute:(MBOAttribute *)attribute atIndex:(NSInteger)index;

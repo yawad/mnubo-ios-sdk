@@ -200,7 +200,7 @@ static BOOL loggingEnabled = NO;
     }
     
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _clientAccessToken] };
-    NSDictionary *parameters = @{@"updateifexists" : updateIfAlreadyExist ? @"1" : @"0"};
+    NSDictionary *parameters = @{@"update_if_exists" : updateIfAlreadyExist ? @"true" : @"false"};
 
     __weak mnubo *weakSelf = self;
     [_httpClient POST:[_baseURL stringByAppendingPathComponent:kMnuboCreateUserPath] headers:headers parameters:parameters data:[user toDictionary] completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
@@ -448,9 +448,10 @@ static BOOL loggingEnabled = NO;
     MBOLog(@"Create object with path : %@", createObjectPath);
 
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
+    NSDictionary *parameters = @{@"update_if_exists" : updateIfAlreadyExist ? @"true" : @"false"};
 
     __weak mnubo *weakSelf = self;
-    [_httpClient POST:createObjectPath headers:headers parameters:nil data:[object toDictionary] completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
+    [_httpClient POST:createObjectPath headers:headers parameters:parameters data:[object toDictionary] completion:^(id data, NSDictionary *responsesHeaderFields, NSError *error)
     {
         if(!error)
         {

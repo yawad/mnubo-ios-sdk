@@ -17,11 +17,11 @@ NSString const * kMBOObjectDeviceIdKey = @"device_id";
 NSString const * kMBOObjectModelNameKey = @"object_model";
 NSString const * kMBOObjectActivateKey = @"activate";
 NSString const * kMBOObjectOwnerKey = @"owner";
-NSString const * kMBOObjectCollectionIdKey = @"collection";
+NSString const * kMBOObjectCollectionsKey = @"collections";
 
 @interface MBOObject ()
 {
-    NSMutableArray *_innerAttributes;
+    NSMutableDictionary *_innerAttributes;
 }
 
 @property(nonatomic, readwrite, copy) NSString *objectId;
@@ -36,7 +36,7 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
     self = [super init];
     if(self)
     {
-        _innerAttributes = [NSMutableArray array];
+        _innerAttributes = [NSMutableDictionary dictionary];
         _location = [[MBOLocation alloc] init];
         _registrationDate = [NSDate date];
     }
@@ -49,7 +49,7 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
     self = [self init];
     if(self)
     {
-        _innerAttributes = [NSMutableArray array];
+        _innerAttributes = [NSMutableDictionary dictionary];
         _location = [[MBOLocation alloc] init];
         _registrationDate = [NSDate date];
         
@@ -58,18 +58,7 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
         _objectModelName = [dictionary stringForKey:kMBOObjectModelNameKey];
         _ownerUsername = [dictionary stringForKey:kMBOObjectOwnerKey];
         
-        NSMutableArray *attributes = [NSMutableArray array];
-        NSArray *attributesDictionaries = [dictionary objectForKey:@"attributes"];
-        [attributesDictionaries enumerateObjectsUsingBlock:^(NSDictionary *attributeDictionary, NSUInteger idx, BOOL *stop)
-         {
-             MBOAttribute *attribute = [[MBOAttribute alloc] initWithDictionary:attributeDictionary];
-             if (attribute)
-             {
-                 [attributes addObject:attribute];
-             }
-         }];
         
-        _innerAttributes = attributes;
         
         _location = [[MBOLocation alloc] initWithDictionary:[dictionary dictionaryForKey:@"registration_location"]];
         if ([dictionary stringForKey:@"registration_date"])
@@ -77,7 +66,7 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
             _registrationDate = [MBODateHelper dateFromMnuboString:[dictionary stringForKey:@"registration_date"]];
         }
 
-        _collectionId = [dictionary objectForKey:@"collectionId"];
+        _collections = [dictionary objectForKey:@"collections"];
     }
 
     return self;
@@ -96,7 +85,7 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
         _innerAttributes = [aDecoder decodeObjectForKey:@"attributes"];
         _location = [aDecoder decodeObjectForKey:@"location"];
         _registrationDate = [aDecoder decodeObjectForKey:@"registration_date"];
-        _collectionId = [aDecoder decodeObjectForKey:@"collectionId"];
+        _collections = [aDecoder decodeObjectForKey:@"collections"];
     }
     
     return self;
@@ -111,7 +100,7 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
     [aCoder encodeObject:_innerAttributes forKey:@"attributes"];
     [aCoder encodeObject:_location forKey:@"location"];
     [aCoder encodeObject:_registrationDate forKey:@"registration_date"];
-    [aCoder encodeObject:_collectionId forKey:@"collectionId"];
+    [aCoder encodeObject:_collections forKey:@"collections"];
 }
 
 - (id)copyWithZone:(NSZone *)zone
@@ -124,12 +113,9 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
     copy.objectId = _objectId;
     copy.location = _location;
     copy.registrationDate = _registrationDate;
-    copy.collectionId = _collectionId;
+    copy.collections = _collections;
     
-    [_innerAttributes enumerateObjectsUsingBlock:^(MBOAttribute *attribute, NSUInteger idx, BOOL *stop)
-    {
-        [copy addAttribute:attribute];
-    }];
+
     
     return copy;
 }
@@ -145,10 +131,10 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
     IsEqualToString(_deviceId, otherObject.deviceId) &&
     IsEqualToString(_ownerUsername, otherObject.ownerUsername) &&
     IsEqualToString(_objectId, otherObject.objectId) &&
-    IsEqualToArray(_innerAttributes, otherObject.attributes) &&
+    IsEqualToDictionary(_innerAttributes, otherObject.attributes) &&
     IsEqual(_location, otherObject.location) &&
     IsEqualToDate(_registrationDate, otherObject.registrationDate) &&
-    IsEqualToArray(_collectionId, otherObject.collectionId);
+    IsEqualToArray(_collections, otherObject.collections);
 }
 
 - (NSUInteger)hash
@@ -161,7 +147,7 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
     hash += [_innerAttributes hash];
     hash += [_location hash];
     hash += [_registrationDate hash];
-    hash += [_collectionId hash];
+    hash += [_collections hash];
     return hash;
 }
 
@@ -189,55 +175,57 @@ NSString const * kMBOObjectCollectionIdKey = @"collection";
     {
         [_dictionary setObject:_ownerUsername forKey:kMBOObjectOwnerKey];
     }
-    
-    NSMutableArray *attributeDictionaries = [NSMutableArray array];
-    [_innerAttributes enumerateObjectsUsingBlock:^(MBOAttribute *attribute, NSUInteger idx, BOOL *stop)
-    {
-        [attributeDictionaries addObject:[attribute toDictionary]];
-    }];
 
-    if (attributeDictionaries.count > 0)
+
+    if (_innerAttributes.count > 0)
+        
     {
-        [_dictionary setObject:attributeDictionaries forKey:@"attributes"];
+        NSMutableArray *attributesArray = [NSMutableArray array];
+        for (NSString *key in _innerAttributes)
+        {
+            [attributesArray addObject:@{@"name": key, @"value": [_innerAttributes valueForKey:key]}];
+        }
+        
+        
+        [_dictionary setObject:attributesArray forKey:@"attributes"];
     }
     
     SafeSetValueForKey(_dictionary, @"registration_date", [MBODateHelper mnuboStringFromDate:_registrationDate]);
 
-    if (_collectionId)
+    if (_collections)
     {
-        [_dictionary setObject:@{@"id" : _collectionId} forKey:kMBOObjectCollectionIdKey];
+        [_dictionary setObject:_collections forKey:kMBOObjectCollectionsKey];
     }
 
     return _dictionary;
 }
 
-- (void)setAttributes:(NSArray *)attributes {
-    _innerAttributes = [[NSMutableArray alloc] initWithArray:attributes];
+- (void)setCollections:(NSArray *)collections
+{
+    _collections = collections;
 }
 
-- (NSArray *)attributes
+- (void)setAttributes:(NSDictionary *)attributes
 {
-    return [NSArray arrayWithArray:_innerAttributes];
+    _innerAttributes = [[NSMutableDictionary alloc] initWithDictionary:attributes];
 }
 
-- (void)addAttribute:(MBOAttribute *)attribute
+- (NSDictionary *)attributes
 {
-    [_innerAttributes addObject:attribute];
+    return [NSDictionary dictionaryWithDictionary:_innerAttributes];
 }
 
-- (void)insertAttribute:(MBOAttribute *)attribute atIndex:(NSInteger)index
+- (void)addAttributes:(NSDictionary *)attributesDictionary
 {
-    [_innerAttributes insertObject:attribute atIndex:index];
+    for (NSString *key in attributesDictionary)
+    {
+        [_innerAttributes setObject:[attributesDictionary objectForKey:key] forKey:key];
+    }
 }
 
-- (void)removeAttribute:(MBOAttribute *)attribute
+- (void)addAttribute:(NSString *)key value:(id)value
 {
-    [_innerAttributes removeObject:attribute];
-}
-
-- (void)removeAttributeAtIndex:(NSInteger)index
-{
-    [_innerAttributes removeObjectAtIndex:index];
+    [_innerAttributes setObject:value forKey:key];
 }
 
 - (void)removeAllAttributes
