@@ -44,22 +44,27 @@
     
     if (self)
     {
-        NSString *latitudeStringValue = dictionary[@"latitude"];
-        if ([latitudeStringValue isKindOfClass:[NSString class]])
-        {
-            _latitude = @([latitudeStringValue doubleValue]);
-        }
-        
-        NSString *longitudeStringValue = dictionary[@"longitude"];
-        if ([longitudeStringValue isKindOfClass:[NSString class]])
-        {
-            _longitude = @([longitudeStringValue doubleValue]);
-        }
-        
-        NSString *elevationStringValue = dictionary[@"elevation"];
-        if ([elevationStringValue isKindOfClass:[NSString class]])
-        {
-            _elevation = @([elevationStringValue doubleValue]);
+        NSArray *coordinates = dictionary[@"geometry"][@"coordinates"];
+        if (coordinates.count > 1) {
+            NSNumber *latitudeValue = coordinates[1];
+            NSNumber *longitudeValue = coordinates[0];
+            
+            if ([latitudeValue isKindOfClass:[NSNumber class]])
+            {
+                _latitude = latitudeValue;
+            }
+            if ([latitudeValue isKindOfClass:[NSNumber class]])
+            {
+                _longitude = longitudeValue;
+            }
+            if (coordinates.count > 2)
+            {
+                NSNumber *elevationValue = coordinates[2];
+                if ([latitudeValue isKindOfClass:[NSNumber class]])
+                {
+                    _elevation = elevationValue;
+                }
+            }
         }
     }
     
@@ -115,14 +120,26 @@
     NSMutableDictionary *propertiesDictionary = [NSMutableDictionary dictionary];
     
     SafeSetValueForKey(geometryDictionary, @"type", @"Point");
-    if (_longitude && _latitude)
-        SafeSetValueForKey(geometryDictionary, @"coordinates", (@[_longitude, _latitude]));
+    
+    NSMutableArray *coordinates = [[NSMutableArray alloc] init];
+    if (_longitude)
+        [coordinates addObject:_longitude];
+    
+    if (_latitude)
+        [coordinates addObject:_latitude];
+    
+    if (_elevation)
+        [coordinates addObject:_elevation];
+    
+    if (coordinates.count == 0)
+        return @{};
 
+    SafeSetValueForKey(geometryDictionary, @"coordinates", coordinates);
     SafeSetValueForKey(propertiesDictionary, @"elevation", _elevation);
     
     SafeSetValueForKey(registrationLocationDictionary, @"type", @"Feature");
     SafeSetValueForKey(registrationLocationDictionary, @"geometry", geometryDictionary)
-    SafeSetValueForKey(registrationLocationDictionary, @"properties", propertiesDictionary)
+    //  SafeSetValueForKey(registrationLocationDictionary, @"properties", propertiesDictionary)
     
     
     

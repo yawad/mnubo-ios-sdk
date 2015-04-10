@@ -35,13 +35,7 @@
 - (NSDictionary *)toDictionary;
 
 - (void)setAttributes:(NSDictionary *)attributes;
-
-- (void)addAttribute:(MBOAttribute *)attribute;
-- (void)insertAttribute:(MBOAttribute *)attribute atIndex:(NSInteger)index;
-
-- (void)removeAttribute:(MBOAttribute *)attribute;
-- (void)removeAttributeAtIndex:(NSInteger)index;
-- (void)removeAllAttributes;
+- (void)addAttribute:(NSString *)key value:(id)value;
 
 - (instancetype)initWithDictionary:(NSDictionary *)dictionary;
 

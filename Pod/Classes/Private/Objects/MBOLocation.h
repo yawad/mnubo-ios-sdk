@@ -12,7 +12,7 @@
 @property(nonatomic) NSNumber *longitude;
 @property(nonatomic) NSNumber *elevation;
 
-- (instancetype)initWithLatitude:(double)latitude longitude:(double)longitude elevation:(double)elevation;;
+- (instancetype)initWithLatitude:(double)latitude longitude:(double)longitude elevation:(double)elevation;
 + (instancetype)locationWithLatitude:(double)latitude longitude:(double)longitude elevation:(double)elevation;
 
 @end

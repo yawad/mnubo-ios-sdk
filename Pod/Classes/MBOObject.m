@@ -49,7 +49,13 @@ NSString const * kMBOObjectCollectionsKey = @"collections";
     self = [self init];
     if(self)
     {
-        _innerAttributes = [NSMutableDictionary dictionary];
+        
+        NSArray* attributes  = [dictionary objectForKey:@"attributes"];
+        for (int i=0; i<attributes.count; i++)
+        {
+            [_innerAttributes setObject:[attributes[i] objectForKey:@"value"] forKey:[attributes[i] objectForKey:@"name"]];
+        }
+        
         _location = [[MBOLocation alloc] init];
         _registrationDate = [NSDate date];
         
@@ -67,6 +73,7 @@ NSString const * kMBOObjectCollectionsKey = @"collections";
         }
 
         _collections = [dictionary objectForKey:@"collections"];
+        
     }
 
     return self;
@@ -114,7 +121,6 @@ NSString const * kMBOObjectCollectionsKey = @"collections";
     copy.location = _location;
     copy.registrationDate = _registrationDate;
     copy.collections = _collections;
-    
 
     
     return copy;
