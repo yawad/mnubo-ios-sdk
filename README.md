@@ -50,12 +50,12 @@ The primary class of the SDK has to be initialize with your mnubo account inform
   - `sendSample:forObjectId:completion:`
   - `sendSample:forDeviceId:completion:`
 * `Fetch Sensor Data`
+  - `sendSample:toPublicSensorName:withObjectId:completion:`
+  - `sendSample:toPublicSensorName:withDeviceId:completion:`
+  - `sendSample:forObjectId:completion:`
+  - `sendSample:forDeviceId:completion:`
   - `fetchLastSampleOfObjectId:sensorName:completion:`
   - `fetchLastSampleOfDeviceId:sensorName:completion:`
-  - `fetchSensorDatasOfObjectId:sensorDefinition:fromStartDate:toEndDate:completion:`
-  - `fetchSensorDatasOfDeviceId:sensorDefinition:fromStartDate:toEndDate:completion:`
-  - `fetchSensorDataCountOfObjectId:sensorDefinition:fromStartDate:toEndDate:completion:`
-  - `fetchSensorDataCountOfDeviceId:sensorDefinition:fromStartDate:toEndDate:completion:`
 * `Oauth 2`
   - `logInWithUsername:password:completion:logOutErrorCompletion:`
   - `logOut`
@@ -199,11 +199,13 @@ At anytime, you can send samples of a specific object's sensor.
 
 ```objc
 
-MBOSample *sample = [[MBOSample alloc] initWithDictionary:@{@"name": @"generic_event"}];
-[sample addSensorWithName:@"value" andDictionary:@{@"event_type": @"command2"}];
+MBOSample *sample = [[MBOSample alloc] init];
+sample.name = @"SAMPLE_NAME";
+[sample addSensorWithName:@"value" andDictionary:@{@"KEY": @"VALUE"}];
 
 // Send the sample to the mnubo platform ny eother specifying the device_id or the object_id
-[[mnubo sharedInstance] sendSample:sample withObjectId:@"OBJECT_ID" orDeviceId:@"DEVICE_ID" completion:^(MBOError *error) {
+[[mnubo sharedInstance] sendSample:sample forDeviceId:@"DEVICE_ID" completion:^(MBOError *error) {
+//Sample sent
 }
 
 ```
@@ -215,7 +217,7 @@ It is now possible to send samples to sensors marked as public. Simply use the m
 
 ```objc
 
-[[mnubo sharedInstance] sendToPublicSensorASample:(MBOSample *)sample withName:@"SENSOR_NAME" withObjectId:@"OBJECT_ID" orDeviceId:@"DEVICE_ID" completion:(MBOError *error) {
+[[mnubo sharedInstance] sendSample:sample toPublicSensorName:@"PUBLIC_SENSOR_NAME" withObjectId:@"OBJECT_ID" completion:(MBOError *error) {
   //Sample sent
 }
 
@@ -226,9 +228,9 @@ It is now possible to send samples to sensors marked as public. Simply use the m
 
 ```objc
 
-MBOSensorDefinition *sensorDefinition = [newlyCreatedObject getSensorDefinitionOfSensorName:@"SENSOR_NAME"];
 
-[[mnubo sharedInstance] fetchLastSensorDataOfObjectId:newlyCreatedObject.objectId sensorDefinition:sensorDefinition completion:^(MBOSensorData *sensorData, MBOError *error) {
+[[mnubo sharedInstance] fetchLastSampleOfDeviceId:@"DEVICE_ID" sensorName:@"SENSOR_NAME" completion:(MBOSample *sample, MBOError *error) {
+  // sample contains the fetched sample data
 }];
 
 ```
