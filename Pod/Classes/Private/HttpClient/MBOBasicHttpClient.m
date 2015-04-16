@@ -96,7 +96,19 @@ typedef void (^MBOBasicClientCompletionBlock)(id data, NSDictionary *responseHea
 
 + (NSMutableURLRequest *)generateRequestWithPath:(NSString *)path method:(NSString *)method headers:(NSDictionary *)headers parameters:(NSDictionary *)parameters
 {
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[NSURL URLWithString:[MBOBasicHttpClient addParameters:parameters toPath:path]]];
+    NSMutableURLRequest *request;
+    
+    if ([[headers objectForKey:@"Content-Type"] isEqualToString:@"application/x-www-form-urlencoded"])
+    {
+        request = [[NSMutableURLRequest alloc] initWithURL:[NSURL URLWithString:path]];
+        NSString *encodedParams = [[MBOBasicHttpClient addParameters:parameters toPath:@""] substringFromIndex:1];
+        [request setHTTPBody:[encodedParams dataUsingEncoding:NSUTF8StringEncoding]];
+    }
+    else
+    {
+        request = [[NSMutableURLRequest alloc] initWithURL:[NSURL URLWithString:[MBOBasicHttpClient addParameters:parameters toPath:path]]];
+    }
+    
     [request setHTTPMethod:method];
 
     [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
