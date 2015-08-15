@@ -27,13 +27,19 @@
             }
             
             // Custom error code
-            if ([_mnuboErrorMessage rangeOfString:@"User "].location != NSNotFound && [_mnuboErrorMessage rangeOfString:@" already exists"].location != NSNotFound)
-            {
-                _mnuboErrorCode = MBOErrorCodeUserAlreadyExists;
+            if (![_mnuboErrorMessage isEqual:[NSNull null]]) {
+                if ([_mnuboErrorMessage rangeOfString:@"User "].location != NSNotFound && [_mnuboErrorMessage rangeOfString:@" already exists"].location != NSNotFound)
+                {
+                    _mnuboErrorCode = MBOErrorCodeUserAlreadyExists;
+                }
+                else if ([_mnuboErrorMessage rangeOfString:@"Bad credentials"].location != NSNotFound)
+                {
+                        _mnuboErrorCode = MBOErrorCodeBadCredentials;
+                }
             }
-            else if ([_mnuboErrorMessage rangeOfString:@"Bad credentials"].location != NSNotFound)
+            else
             {
-                    _mnuboErrorCode = MBOErrorCodeBadCredentials;
+                _mnuboErrorMessage = @"NSNull";
             }
         }
     }
