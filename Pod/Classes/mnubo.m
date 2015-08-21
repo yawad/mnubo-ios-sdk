@@ -833,6 +833,71 @@ static BOOL loggingEnabled = NO;
    }];
 }
 
+- (void)fetchSampleOfObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
+{
+    BOOL byObjectId = objectId.length > 0;
+    
+
+    NSString *getSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboGetSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode], [sensorName urlEncode]]];
+    NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
+    
+    NSDictionary *parameters = @{@"id_type" : byObjectId ? @"objectid" : @"deviceid",
+                                 @"value" : @"samples",
+                                 @"from": [MBODateHelper mnuboStringFromDate:startDate],
+                                 @"to": [MBODateHelper mnuboStringFromDate:startDate]};
+    
+    
+    
+    __weak mnubo *weakSelf = self;
+    [_httpClient GET:getSensorPath headers:headers parameters:parameters completion:^(id data, NSError *error)
+     {
+         if(!error)
+         {
+             BOOL invalidData = YES;
+             if([data isKindOfClass:[NSDictionary class]])
+             {
+                 NSDictionary *rawData = data;
+                 NSArray *samples = [rawData arrayForKey:@"samples"];
+                 
+                 __block NSMutableArray *sensorDatas = [NSMutableArray arrayWithCapacity:samples.count];
+                 [samples enumerateObjectsUsingBlock:^(NSDictionary *sampleData, NSUInteger idx, BOOL *stop)
+                  {
+                      if([sampleData isKindOfClass:[NSDictionary class]])
+                      {
+                          [sensorDatas addObject:[[MBOSample alloc] initWithDictionary:sampleData]];
+                      }
+                      if(completion) completion(sensorDatas, nil);
+                  }];
+             }
+             
+             if(invalidData)
+             {
+                 if(completion) completion(nil, [MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeInvalidDataReceived userInfo:nil]);
+             }
+         }
+         else if(error.code == 401 && allowRefreshToken)
+         {
+             [weakSelf getUserAccessTokenWithRefreshTokenCompletion:^(MBOError *error)
+              {
+                  if(!error)
+                  {
+                      [weakSelf fetchSampleOfObjectId:objectId orDeviceId:deviceId sensorName:sensorName fromStartDate:startDate toEndDate:endDate allowRefreshToken:NO completion:completion];
+                  }
+                  else
+                  {
+                      if(completion) completion(nil, error);
+                  }
+              }];
+         }
+         else
+         {
+             if(completion) completion(nil, [MBOError errorWithError:error extraInfo:data]);
+         }
+     }];
+    
+}
+
+
 //------------------------------------------------------------------------------
 #pragma mark Authentication
 //------------------------------------------------------------------------------
@@ -931,7 +996,7 @@ static BOOL loggingEnabled = NO;
              if ([self isUserConnected])
              {
                  [self logOut];
-                 self.oauthErrorBlock(nil);
+                 if (self.oauthErrorBlock) self.oauthErrorBlock(nil);
                  
              }
              
