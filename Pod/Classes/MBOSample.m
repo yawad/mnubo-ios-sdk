@@ -40,8 +40,10 @@
     self = [super init];
     if(self)
     {
-        _registrationDate = [NSDate date];
-        _attributes = [NSMutableDictionary dictionary];
+        _name = [dictionary objectForKey:@"name"];
+        
+        _registrationDate = [dictionary objectForKey:@"timestamp"];
+        _attributes = [[NSMutableDictionary alloc] initWithDictionary:[dictionary objectForKey:@"value"]];
         _location = [[MBOLocation alloc] init];
         _commonValues = [[NSMutableDictionary alloc] initWithDictionary:dictionary];
 

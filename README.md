@@ -56,6 +56,9 @@ The primary class of the SDK has to be initialize with your mnubo account inform
   - `sendSample:forDeviceId:completion:`
   - `fetchLastSampleOfObjectId:sensorName:completion:`
   - `fetchLastSampleOfDeviceId:sensorName:completion:`
+  - `fetchSamplesOfObjectId:sensorName:fromStartDate:toEndDate:completion:`
+  - `fetchSamplesOfDeviceId:sensorName:fromStartDate:toEndDate:completion:`
+
 * `Oauth 2`
   - `logInWithUsername:password:completion:logOutErrorCompletion:`
   - `logOut`
@@ -203,7 +206,7 @@ MBOSample *sample = [[MBOSample alloc] init];
 sample.name = @"SAMPLE_NAME";
 [sample addSensorWithName:@"value" andDictionary:@{@"KEY": @"VALUE"}];
 
-// Send the sample to the mnubo platform ny eother specifying the device_id or the object_id
+// Send the sample to the mnubo platform by either specifying the device_id or the object_id
 [[mnubo sharedInstance] sendSample:sample forDeviceId:@"DEVICE_ID" completion:^(MBOError *error) {
 //Sample sent
 }
@@ -225,12 +228,23 @@ It is now possible to send samples to sensors marked as public. Simply use the m
 ```
 
 ### Fetch Sensor Data
+Retrieve the last sample sent from a sensor
 
 ```objc
 
-
 [[mnubo sharedInstance] fetchLastSampleOfDeviceId:@"DEVICE_ID" sensorName:@"SENSOR_NAME" completion:(MBOSample *sample, MBOError *error) {
   // sample contains the fetched sample data
+}];
+
+```
+
+### Fetch Samples by Time
+Retrieve an array of samples between an interval of time
+
+```objc
+
+[[mnubo sharedInstance] fetchSamplesOfDeviceId:@"DEVICE_ID" sensorName:@"SENSOR_NAME" fromStartDate:START_DATE toEndDate:END_DATE completion:(NSArray *samples, MBOError *error) {
+  // samples contain the fetched sample data
 }];
 
 ```

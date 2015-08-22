@@ -833,7 +833,17 @@ static BOOL loggingEnabled = NO;
    }];
 }
 
-- (void)fetchSampleOfObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
+- (void)fetchSamplesOfObjectId:(NSString *)objectId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
+{
+    [self fetchSamplesOfObjectId:objectId orDeviceId:nil sensorName:sensorName fromStartDate:startDate toEndDate:endDate allowRefreshToken:YES completion:completion];
+}
+
+- (void)fetchSamplesOfDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
+{
+    [self fetchSamplesOfObjectId:nil orDeviceId:deviceId sensorName:sensorName fromStartDate:startDate toEndDate:endDate allowRefreshToken:YES completion:completion];
+}
+
+- (void)fetchSamplesOfObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
 {
     BOOL byObjectId = objectId.length > 0;
     
@@ -844,7 +854,7 @@ static BOOL loggingEnabled = NO;
     NSDictionary *parameters = @{@"id_type" : byObjectId ? @"objectid" : @"deviceid",
                                  @"value" : @"samples",
                                  @"from": [MBODateHelper mnuboStringFromDate:startDate],
-                                 @"to": [MBODateHelper mnuboStringFromDate:startDate]};
+                                 @"to": [MBODateHelper mnuboStringFromDate:endDate]};
     
     
     
@@ -853,7 +863,6 @@ static BOOL loggingEnabled = NO;
      {
          if(!error)
          {
-             BOOL invalidData = YES;
              if([data isKindOfClass:[NSDictionary class]])
              {
                  NSDictionary *rawData = data;
@@ -866,11 +875,10 @@ static BOOL loggingEnabled = NO;
                       {
                           [sensorDatas addObject:[[MBOSample alloc] initWithDictionary:sampleData]];
                       }
-                      if(completion) completion(sensorDatas, nil);
                   }];
+                 if(completion) completion(sensorDatas, nil);
              }
-             
-             if(invalidData)
+             else
              {
                  if(completion) completion(nil, [MBOError errorWithDomain:@"com.mnubo.sdk" code:MBOErrorCodeInvalidDataReceived userInfo:nil]);
              }
@@ -881,7 +889,7 @@ static BOOL loggingEnabled = NO;
               {
                   if(!error)
                   {
-                      [weakSelf fetchSampleOfObjectId:objectId orDeviceId:deviceId sensorName:sensorName fromStartDate:startDate toEndDate:endDate allowRefreshToken:NO completion:completion];
+                      [weakSelf fetchSamplesOfObjectId:objectId orDeviceId:deviceId sensorName:sensorName fromStartDate:startDate toEndDate:endDate allowRefreshToken:NO completion:completion];
                   }
                   else
                   {
