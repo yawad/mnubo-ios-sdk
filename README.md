@@ -81,7 +81,7 @@ We recommend to use the shared instance of the mnubo SDK in your application and
 }
 ```
 
-### Create/Register an user
+### Create/Register a user
 
 To create an new user, you must create an MBOUser object (include in the SDK) and set its attributes according to the data provided by the end user. To save it in the mnubo platform, use the createUser:updateIfAlreadyExist:completion: method with your new user as parameter. See the example below.
 
@@ -112,7 +112,7 @@ After the user is created in the mnubo platforme, an email is automatically sent
 }];
 ```
 
-### Log In an user
+### Log In a user
 
 Once a user is present in the mnubo platform, an authentication can be executed to fetch the user's access tokens. This login method requires the username and the password of the user to authenticate.
 
@@ -132,8 +132,16 @@ oauthErrorCompletion:^(MBOError *)error
 }];
 
 ```
+## IMPORTANT
+Every time the app resumes and the user is already logged in, you should set the oauth error callback which will be used in case both of the user's tokens (access and refresh) expire. To do so, simply add this line:
+```objc
 
-### Check if an user is connected
+[[mnubo sharedInstance] setOauthErrorBlock:^(MBOError *error) {
+        // Show the login view to the user to log the user back in
+    }];
+```
+
+### Check if a user is connected
 
 At anytime you can validate if a user is connected. Simply retrieve a boolean with the help of the isUserConnected method.
 
@@ -143,7 +151,7 @@ At anytime you can validate if a user is connected. Simply retrieve a boolean wi
 BOOL isUserConnected = [[mnubo sharedInstance] isUserConnected];
 ```
 
-### Log Out an user
+### Log Out a user
 
 When the user needs to be logged out, the logOut method will clear all of the user's access tokens. After that operation, the isUserConnected method will return NO (false). Access to restricted section of your app should be made unavailable.
 
@@ -179,7 +187,7 @@ Once the user recieve the token by email
 
 ### Create an object
 
-Once an user is correctly logged in, objects can be created and sent to the mnubo platform. To to so, a MBOObject is created and the data can be added accordingly with the object type. To save the object in the mnubo platform, use the createObject: updateIfAlreadyExist:completion: method while providing the new object.
+Once a user is correctly logged in, objects can be created and sent to the mnubo platform. To to so, a MBOObject is created and the data can be added accordingly with the object type. To save the object in the mnubo platform, use the createObject: updateIfAlreadyExist:completion: method while providing the new object.
 
 ```objc
 
@@ -238,12 +246,13 @@ Retrieve the last sample sent from a sensor
 
 ```
 
-### Fetch Samples by Time
-Retrieve an array of samples between an interval of time
+### Fetch Samples by Time and Max Count
+Retrieve an array of samples between an interval of time with a limit
+A MAX_COUNT value of zero will fetch all the samples
 
 ```objc
 
-[[mnubo sharedInstance] fetchSamplesOfDeviceId:@"DEVICE_ID" sensorName:@"SENSOR_NAME" fromStartDate:START_DATE toEndDate:END_DATE completion:(NSArray *samples, MBOError *error) {
+[[mnubo sharedInstance] fetchSamplesOfDeviceId:@"DEVICE_ID" sensorName:@"SENSOR_NAME" fromStartDate:START_DATE toEndDate:END_DATE withMaxCount:MAX_COUNT completion:(NSArray *samples, MBOError *error) {
   // samples contain the fetched sample data
 }];
 

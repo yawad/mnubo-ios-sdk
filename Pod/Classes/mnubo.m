@@ -833,17 +833,17 @@ static BOOL loggingEnabled = NO;
    }];
 }
 
-- (void)fetchSamplesOfObjectId:(NSString *)objectId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
+- (void)fetchSamplesOfObjectId:(NSString *)objectId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate withMaxCount:(NSInteger)maxCount completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
 {
-    [self fetchSamplesOfObjectId:objectId orDeviceId:nil sensorName:sensorName fromStartDate:startDate toEndDate:endDate allowRefreshToken:YES completion:completion];
+    [self fetchSamplesOfObjectId:objectId orDeviceId:nil sensorName:sensorName fromStartDate:startDate toEndDate:endDate withMaxCount:maxCount allowRefreshToken:YES completion:completion];
 }
 
-- (void)fetchSamplesOfDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
+- (void)fetchSamplesOfDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate withMaxCount:(NSInteger)maxCount completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
 {
-    [self fetchSamplesOfObjectId:nil orDeviceId:deviceId sensorName:sensorName fromStartDate:startDate toEndDate:endDate allowRefreshToken:YES completion:completion];
+    [self fetchSamplesOfObjectId:nil orDeviceId:deviceId sensorName:sensorName fromStartDate:startDate toEndDate:endDate withMaxCount:maxCount allowRefreshToken:YES completion:completion];
 }
 
-- (void)fetchSamplesOfObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
+- (void)fetchSamplesOfObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate withMaxCount:(NSInteger)maxCount allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
 {
     BOOL byObjectId = objectId.length > 0;
     
@@ -851,13 +851,14 @@ static BOOL loggingEnabled = NO;
     NSString *getSensorPath = [_baseURL stringByAppendingPathComponent:[NSString stringWithFormat:kMnuboGetSensorDataPath, byObjectId ? [objectId urlEncode]: [deviceId urlEncode], [sensorName urlEncode]]];
     NSDictionary *headers = @{ @"Authorization" : [NSString stringWithFormat:@"Bearer %@", _userAccessToken] };
     
-    NSDictionary *parameters = @{@"id_type" : byObjectId ? @"objectid" : @"deviceid",
+    NSMutableDictionary *parameters = [[NSMutableDictionary alloc] initWithDictionary: @{@"id_type" : byObjectId ? @"objectid" : @"deviceid",
                                  @"value" : @"samples",
                                  @"from": [MBODateHelper mnuboStringFromDate:startDate],
-                                 @"to": [MBODateHelper mnuboStringFromDate:endDate]};
-    
-    
-    
+                                 @"to": [MBODateHelper mnuboStringFromDate:endDate]}];
+    if (maxCount > 0) {
+        parameters[@"limit"] = [NSString stringWithFormat: @"%ld", (long)maxCount];
+    }
+
     __weak mnubo *weakSelf = self;
     [_httpClient GET:getSensorPath headers:headers parameters:parameters completion:^(id data, NSError *error)
      {
@@ -889,7 +890,7 @@ static BOOL loggingEnabled = NO;
               {
                   if(!error)
                   {
-                      [weakSelf fetchSamplesOfObjectId:objectId orDeviceId:deviceId sensorName:sensorName fromStartDate:startDate toEndDate:endDate allowRefreshToken:NO completion:completion];
+                      [weakSelf fetchSamplesOfObjectId:objectId orDeviceId:deviceId sensorName:sensorName fromStartDate:startDate toEndDate:endDate withMaxCount:maxCount allowRefreshToken:NO completion:completion];
                   }
                   else
                   {

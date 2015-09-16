@@ -64,8 +64,8 @@
 - (void)fetchLastSampleOfObjectId:(NSString *)objectId sensorName:(NSString *)sensorName completion:(void (^)(MBOSample *sample, MBOError *error))completion;
 - (void)fetchLastSampleOfDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName completion:(void (^)(MBOSample *sample, MBOError *error))completion;
 
-- (void)fetchSamplesOfObjectId:(NSString *)objectId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion;
-- (void)fetchSamplesOfDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion;
+- (void)fetchSamplesOfObjectId:(NSString *)objectId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate withMaxCount:(NSInteger)maxCount completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion;
+- (void)fetchSamplesOfDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate withMaxCount:(NSInteger)maxCount completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion;
 
 /// Tokens
 - (BOOL)isUserConnected;
