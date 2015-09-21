@@ -56,8 +56,8 @@ The primary class of the SDK has to be initialize with your mnubo account inform
   - `sendSample:forDeviceId:completion:`
   - `fetchLastSampleOfObjectId:sensorName:completion:`
   - `fetchLastSampleOfDeviceId:sensorName:completion:`
-  - `fetchSamplesOfObjectId:sensorName:fromStartDate:toEndDate:completion:`
-  - `fetchSamplesOfDeviceId:sensorName:fromStartDate:toEndDate:completion:`
+  - `fetchSamplesOfObjectId:sensorName:fromStartDate:toEndDate:withMaxCount:andOrder:completion:`
+  - `fetchSamplesOfDeviceId:sensorName:fromStartDate:toEndDate:withMaxCount:andOrder:completion:`
 
 * `Oauth 2`
   - `logInWithUsername:password:completion:logOutErrorCompletion:`
@@ -246,13 +246,14 @@ Retrieve the last sample sent from a sensor
 
 ```
 
-### Fetch Samples by Time and Max Count
-Retrieve an array of samples between an interval of time with a limit
+### Fetch Samples by Time, Max Count and Order
+Retrieve an array of samples between an interval of time with a limit and an order
 A MAX_COUNT value of zero will fetch all the samples
+The ORDER value is either ASC or DESC
 
 ```objc
 
-[[mnubo sharedInstance] fetchSamplesOfDeviceId:@"DEVICE_ID" sensorName:@"SENSOR_NAME" fromStartDate:START_DATE toEndDate:END_DATE withMaxCount:MAX_COUNT completion:(NSArray *samples, MBOError *error) {
+[[mnubo sharedInstance] fetchSamplesOfDeviceId:@"DEVICE_ID" sensorName:@"SENSOR_NAME" fromStartDate:START_DATE toEndDate:END_DATE withMaxCount:MAX_COUNT andOrder:ORDER completion:(NSArray *samples, MBOError *error) {
   // samples contain the fetched sample data
 }];
 

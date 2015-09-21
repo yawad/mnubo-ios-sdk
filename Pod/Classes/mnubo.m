@@ -51,7 +51,6 @@ NSString * const kMnuboPostPublicSensorDataPath = @"/api/v2/objects/%@/sensors/%
 NSString * const kMnuboGetSensorDataPath = @"/api/v2/objects/%@/sensors/%@/samples";
 
 
-
 @interface mnubo()
 {
     id<MBOHttpClient> _httpClient;
@@ -833,17 +832,17 @@ static BOOL loggingEnabled = NO;
    }];
 }
 
-- (void)fetchSamplesOfObjectId:(NSString *)objectId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate withMaxCount:(NSInteger)maxCount completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
+- (void)fetchSamplesOfObjectId:(NSString *)objectId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate withMaxCount:(NSInteger)maxCount andOrder:(MBOSampleOrder)order completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
 {
-    [self fetchSamplesOfObjectId:objectId orDeviceId:nil sensorName:sensorName fromStartDate:startDate toEndDate:endDate withMaxCount:maxCount allowRefreshToken:YES completion:completion];
+    [self fetchSamplesOfObjectId:objectId orDeviceId:nil sensorName:sensorName fromStartDate:startDate toEndDate:endDate withMaxCount:maxCount andOrder:order allowRefreshToken:YES completion:completion];
 }
 
-- (void)fetchSamplesOfDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate withMaxCount:(NSInteger)maxCount completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
+- (void)fetchSamplesOfDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate withMaxCount:(NSInteger)maxCount andOrder:(MBOSampleOrder)order completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
 {
-    [self fetchSamplesOfObjectId:nil orDeviceId:deviceId sensorName:sensorName fromStartDate:startDate toEndDate:endDate withMaxCount:maxCount allowRefreshToken:YES completion:completion];
+    [self fetchSamplesOfObjectId:nil orDeviceId:deviceId sensorName:sensorName fromStartDate:startDate toEndDate:endDate withMaxCount:maxCount andOrder:order allowRefreshToken:YES completion:completion];
 }
 
-- (void)fetchSamplesOfObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate withMaxCount:(NSInteger)maxCount allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
+- (void)fetchSamplesOfObjectId:(NSString *)objectId orDeviceId:(NSString *)deviceId sensorName:(NSString *)sensorName fromStartDate:(NSDate *)startDate toEndDate:(NSDate *)endDate withMaxCount:(NSInteger)maxCount andOrder:(MBOSampleOrder)order allowRefreshToken:(BOOL)allowRefreshToken completion:(void (^)(NSArray *sensorDatas, MBOError *error))completion
 {
     BOOL byObjectId = objectId.length > 0;
     
@@ -857,6 +856,7 @@ static BOOL loggingEnabled = NO;
                                  @"to": [MBODateHelper mnuboStringFromDate:endDate]}];
     if (maxCount > 0) {
         parameters[@"limit"] = [NSString stringWithFormat: @"%ld", (long)maxCount];
+        parameters[@"order"] = order == DESC ? @"DESC" : @"ASC";
     }
 
     __weak mnubo *weakSelf = self;
@@ -890,7 +890,7 @@ static BOOL loggingEnabled = NO;
               {
                   if(!error)
                   {
-                      [weakSelf fetchSamplesOfObjectId:objectId orDeviceId:deviceId sensorName:sensorName fromStartDate:startDate toEndDate:endDate withMaxCount:maxCount allowRefreshToken:NO completion:completion];
+                      [weakSelf fetchSamplesOfObjectId:objectId orDeviceId:deviceId sensorName:sensorName fromStartDate:startDate toEndDate:endDate withMaxCount:maxCount andOrder:order allowRefreshToken:NO completion:completion];
                   }
                   else
                   {
