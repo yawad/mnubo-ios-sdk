@@ -1,7 +1,9 @@
 //
-//  MBOMacros.h
-//  
-//  Copyright (c) 2015 mnubo. All rights reserved.
+//  MNUMacros.h
+//  APIv3
+//
+//  Created by Guillaume on 2015-10-25.
+//  Copyright © 2015 mnubo. All rights reserved.
 //
 
 #define IsEqualToString(x,y) (([x isEqualToString:y]) || (!x && !y))
@@ -13,4 +15,4 @@
 
 #define SafeSetValueForKey(dict, k, v) if (v) dict[k] = v;
 
-#define MBOLog(string, ...) if ([mnubo isLoggingEnabled]) NSLog (string, ##__VA_ARGS__)
+#define MNULog(string, ...) if ([MnuboClient isLoggingEnabled]) NSLog (string, ##__VA_ARGS__)

@@ -1,6 +1,6 @@
 //
 //  NSString+mnubo.h
-//  
+//
 //  Copyright (c) 2015 mnubo. All rights reserved.
 //
 
