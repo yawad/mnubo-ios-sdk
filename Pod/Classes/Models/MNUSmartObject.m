@@ -13,13 +13,12 @@
 //------------------------------------------------------------------------------
 #pragma mark Helper methods
 //------------------------------------------------------------------------------
-- (instancetype)init
-{
+- (instancetype)init {
+    
     self = [super init];
-    if (self)
-    {
+    if (self) {
         _attributes = [[NSMutableDictionary alloc] init];
-        //_registrationDate = [NSDate date];
+        _registrationDate = [NSDate date];
     }
     
     return self;
@@ -35,7 +34,7 @@
     SafeSetValueForKey(attributeDictionary, @"owner", _owner);
     
     
-    for(id key in _attributes)
+    for (id key in _attributes)
         SafeSetValueForKey(attributeDictionary, key, [_attributes objectForKey:key]);
     
     return [NSDictionary dictionaryWithDictionary:attributeDictionary];

@@ -11,13 +11,12 @@
 @implementation MNUEvent
 
 
-- (instancetype)init
-{
+- (instancetype)init {
+    
     self = [super init];
-    if (self)
-    {
+    if (self) {
         _timeseries = [[NSMutableDictionary alloc] init];
-        //_registrationDate = [NSDate date];
+        _timestamp = [NSDate date];
     }
     
     return self;
@@ -35,7 +34,7 @@
     SafeSetValueForKey(attributeDictionary, @"x_event_type", _eventType);
     SafeSetValueForKey(attributeDictionary, @"x_timestamp", _timestamp);
 
-    for(id key in _timeseries)
+    for (id key in _timeseries)
         SafeSetValueForKey(attributeDictionary, key, [_timeseries objectForKey:key]);
     
     return [NSDictionary dictionaryWithDictionary:attributeDictionary];
