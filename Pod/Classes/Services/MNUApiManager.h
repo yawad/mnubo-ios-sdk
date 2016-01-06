@@ -17,6 +17,6 @@
 
 - (void)putWithPath:(NSString *)path body:(NSDictionary *)body completion:(void (^)(NSError *error))completion;
 
-- (BOOL)isUserAccessTokenPresent;
+- (BOOL)isOwnerAccessTokenPresent;
 - (void)removeTokens;
 @end

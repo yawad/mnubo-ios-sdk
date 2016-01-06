@@ -153,7 +153,7 @@
     }
 }
 
-- (BOOL)isUserAccessTokenPresent {
+- (BOOL)isOwnerAccessTokenPresent {
     if (_accessToken.accessToken) {
         return YES;
     } else {

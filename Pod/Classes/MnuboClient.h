@@ -18,7 +18,7 @@
 // Init
 + (MnuboClient *)sharedInstanceWithClientId:(NSString *)clientId andHostname:(NSString *)hostname;
 + (MnuboClient *)sharedInstance;
-- (BOOL)isUserConnected;
+- (BOOL)isOwnerConnected;
 
 // Auth
 - (void)loginWithUsername:(NSString *)username password:(NSString *)password completion:(void (^)(NSError *error))completion;

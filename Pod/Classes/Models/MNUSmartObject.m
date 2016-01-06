@@ -28,7 +28,6 @@
     NSMutableDictionary *attributeDictionary = [NSMutableDictionary dictionary];
     
     SafeSetValueForKey(attributeDictionary, @"x_device_id", _deviceId);
-    SafeSetValueForKey(attributeDictionary, @"object_id", _objectId);
     SafeSetValueForKey(attributeDictionary, @"x_object_type", _objectType);
     SafeSetValueForKey(attributeDictionary, @"x_registration_date", _registrationDate);
     SafeSetValueForKey(attributeDictionary, @"owner", _owner);

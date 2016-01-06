@@ -12,7 +12,6 @@
 @interface MNUSmartObject : NSObject
 
 @property (nonatomic, copy) NSString *deviceId;
-@property (nonatomic, copy) NSString *objectId;
 @property (nonatomic, copy) NSString *objectType;
 @property (nonatomic, copy) NSDate *registrationDate;
 @property (nonatomic, copy) MNUOwner *owner;

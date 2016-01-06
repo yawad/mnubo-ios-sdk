@@ -57,8 +57,8 @@ static MnuboClient *_sharedInstance = nil;
     [_apiManager removeTokens];
 }
 
-- (BOOL)isUserConnected {
-    return [_apiManager isUserAccessTokenPresent];
+- (BOOL)isOwnerConnected {
+    return [_apiManager isOwnerAccessTokenPresent];
 }
 
 - (void)updateSmartObject:(MNUSmartObject *)smartObject withDeviceId:(NSString *)deviceId {
