@@ -313,7 +313,7 @@ https://github.com/mnubo/mnubo-iOS-SDK/tree/master/Pod/Classes
 ---
 #<a name="section8"></a>8. Known limitations
 
-N/A
+Search function is not supported at the momment.
 
 ---
 #<a name="section9"></a>9. References
