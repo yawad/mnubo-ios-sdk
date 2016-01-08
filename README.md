@@ -297,7 +297,6 @@ BOOL isEnabled = [mnubo isLoggingEnabled];
 ---
 #<a name="section6"></a>6. Important notes
 
-## IMPORTANT
 Every time the app resumes and the user is already logged in, you should set the oauth error callback which will be used in case both of the user's tokens (access and refresh) expire. To do so, simply add this line:
 ```objc
 
