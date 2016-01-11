@@ -31,7 +31,7 @@ iOS SDK allowing iOS apps to quickly implement the mnubo REST API.
 
 ### mnubo
 
-The primary class of the SDK has to be initialize with your mnubo account informations (name, namespace, consumer keys, consumer secrets). mnubo REST API calls are represented by a method of that class.
+The primary class of the SDK has to be initialized with your mnubo account information (name, namespace, consumer keys, consumer secrets). mnubo REST API calls are represented by a method of that class.
 
 * `SDK Management`
   - `sharedInstanceWithClientId:clientSecret:hostname:`
@@ -85,7 +85,7 @@ The primary class of the SDK has to be initialize with your mnubo account inform
 #<a name="section4"></a>4. Installation & Configuration
 
 1. Install [CocoaPods](http://cocoapods.org/) with `gem install cocoapods`.
-2. Create a file in your XCode project called `Podfile` and add the following line:
+2. Create a file in your XCode project called `Podfile` and add the following lines:
 
     ```ruby
     pod 'mnuboSDK'
