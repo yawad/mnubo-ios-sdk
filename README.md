@@ -308,7 +308,7 @@ Every time the app resumes and the user is already logged in, you should set the
 ---
 #<a name="section7"></a>7. Source code
 
-https://github.com/mnubo/mnubo-iOS-SDK/tree/master/Pod/Classes
+https://github.com/mnubo/mnubo-ios-sdk/tree/master/Pod/Classes
 
 ---
 #<a name="section8"></a>8. Known limitations
