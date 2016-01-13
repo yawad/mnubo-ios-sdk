@@ -1,22 +1,33 @@
-mnubo iOS SDK
-============
+# mnubo iOS SDK
+
+Table of Content
+================
+
+[1. Introduction](#section1)
+
+[2. Architecture](#section2)
+
+[3. Pre-requisites](#section3)
+
+[4. Installation & Configuration](#section4)
+
+[5. Usage](#section5)
+
+[6. Important notes](#section6)
+
+[7. Source code](#section7)
+
+[8. Known limitations](#section8)
+
+[9. References](#section9)
+
+---
+#<a name="section1"></a>1. Introduction
 
 iOS SDK allowing iOS apps to quickly implement the mnubo REST API.
 
-## How To Get Started
-
-1. Install [CocoaPods](http://cocoapods.org/) with `gem install cocoapods`.
-2. Create a file in your XCode project called `Podfile` and add the following line:
-
-    ```ruby
-    pod 'mnuboSDK'
-    ```
-
-3. Run `pod install` in your xcode project directory. CocoaPods should download and
-install the mnubo iOS SDK, and create a new Xcode workspace. Open up this workspace in Xcode.
-
-
-## Architecture
+---
+#<a name="section3"></a>2. Architecture
 
 ### mnubo
 
@@ -36,7 +47,27 @@ The primary class of the SDK has to be initialized with your mnubo account infor
   - `updateOwner:withUsername:`
   - `sendEvents:withDeviceId:`
 
-## Usage
+---
+#<a name="section3"></a>3. Pre-requisites
+
+- CocoaPods
+- iOS
+
+---
+#<a name="section4"></a>4. Installation & Configuration
+
+1. Install [CocoaPods](http://cocoapods.org/) with `gem install cocoapods`.
+2. Create a file in your XCode project called `Podfile` and add the following lines:
+
+    ```ruby
+    pod 'mnuboSDK'
+    ```
+
+3. Run `pod install` in your xcode project directory. CocoaPods should download and
+install the mnubo iOS SDK, and create a new Xcode workspace. Open up this workspace in Xcode.
+
+---
+#<a name="section5"></a>5. Usage
 
 ### Initialize the MnuboClient
 
@@ -124,5 +155,29 @@ event.eventType = @"EVENT_TYPE";
 
 ```
 
-### TODO
-  * retry mechanism while sending events offline
+  ---
+#<a name="section6"></a>6. Important notes
+
+Every time the app resumes and the user is already logged in, you should set the oauth error callback which will be used in case both of the user's tokens (access and refresh) expire. To do so, simply add this line:
+```objc
+
+[[mnubo sharedInstance] setOauthErrorBlock:^(MBOError *error) {
+        // Show the login view to the user to log the user back in
+    }];
+```
+
+---
+#<a name="section7"></a>7. Source code
+
+https://github.com/mnubo/mnubo-ios-sdk/tree/master/Pod/Classes
+
+---
+#<a name="section8"></a>8. Known limitations
+
+Search function is not supported at the momment.
+Retry mechanism while sending events offline is not supported at the moment.
+
+---
+#<a name="section9"></a>9. References
+
+https://en.wikipedia.org/wiki/IOS_SDK
