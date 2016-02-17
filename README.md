@@ -57,7 +57,7 @@ The primary class of the SDK has to be initialized with your mnubo account infor
 #<a name="section4"></a>4. Installation & Configuration
 
 1. Install [CocoaPods](http://cocoapods.org/) with `gem install cocoapods`.
-2. Create a file in your XCode project called `Podfile` and add the following lines:
+2. Create a file in your Xcode project called `Podfile` and add the following lines:
 
     ```ruby
     pod 'mnuboSDK'
