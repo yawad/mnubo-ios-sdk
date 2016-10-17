@@ -19,7 +19,6 @@
     self = [super init];
     if (self) {
         _attributes = [[NSMutableDictionary alloc] init];
-        _registrationDate = [NSDate date];
     }
     
     return self;
@@ -30,7 +29,6 @@
     
     SafeSetValueForKey(attributeDictionary, @"username", _username);
     SafeSetValueForKey(attributeDictionary, @"x_password", _password);
-    SafeSetValueForKey(attributeDictionary, @"x_registration_date", _registrationDate);
     
     for (id key in _attributes)
         SafeSetValueForKey(attributeDictionary, key, [_attributes objectForKey:key]);
