@@ -18,7 +18,6 @@
     self = [super init];
     if (self) {
         _attributes = [[NSMutableDictionary alloc] init];
-        _registrationDate = [NSDate date];
     }
     
     return self;
@@ -29,7 +28,6 @@
     
     SafeSetValueForKey(attributeDictionary, @"x_device_id", _deviceId);
     SafeSetValueForKey(attributeDictionary, @"x_object_type", _objectType);
-    SafeSetValueForKey(attributeDictionary, @"x_registration_date", _registrationDate);
     SafeSetValueForKey(attributeDictionary, @"owner", _owner);
     
     

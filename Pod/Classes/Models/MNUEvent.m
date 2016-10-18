@@ -16,7 +16,6 @@
     self = [super init];
     if (self) {
         _timeseries = [[NSMutableDictionary alloc] init];
-        _timestamp = [NSDate date];
     }
     
     return self;
@@ -32,7 +31,6 @@
     SafeSetValueForKey(attributeDictionary, @"event_id", _eventId);
     
     SafeSetValueForKey(attributeDictionary, @"x_event_type", _eventType);
-    SafeSetValueForKey(attributeDictionary, @"x_timestamp", _timestamp);
 
     for (id key in _timeseries)
         SafeSetValueForKey(attributeDictionary, key, [_timeseries objectForKey:key]);

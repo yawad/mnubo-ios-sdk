@@ -15,7 +15,6 @@
 @property (nonatomic, copy) NSString *eventId;
 @property (nonatomic, copy) MNUSmartObject *smartObject;
 @property (nonatomic, copy) NSString *eventType;
-@property (nonatomic, copy) NSDate *timestamp;
 @property (nonatomic, copy) NSMutableDictionary *timeseries;
 
 - (NSDictionary *)toDictionary;
